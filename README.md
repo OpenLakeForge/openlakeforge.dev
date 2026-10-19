@@ -23,18 +23,21 @@ npm run preview   # serve dist/
 - `/` is the presentation page (`src/pages/index.astro`, copy in `src/data/landing.ts`).
 - `/style-guide/` shows every documentation element in the theme.
 
-## Release
+## Contribute and deploy
 
-The site is hosted on Cloudflare, configured in [`wrangler.jsonc`](wrangler.jsonc).
-To release, bump `version` in `package.json`, merge, then push the matching tag:
+`main` is production: **merging a pull request into `main` deploys
+openlakeforge.dev.** The site is hosted on Cloudflare, configured in
+[`wrangler.jsonc`](wrangler.jsonc), and built by **Cloudflare Workers Builds**,
+which is connected to this repository (no token lives in GitHub).
 
-```bash
-git tag v0.2.0 && git push origin v0.2.0
-```
+| Branch | What Cloudflare does |
+| --- | --- |
+| `main` | `npm run build` then `npx wrangler deploy` → https://openlakeforge.dev |
+| any other branch | `npm run build` then `npx wrangler versions upload` → a preview URL on the PR |
 
-[`release.yml`](.github/workflows/release.yml) builds and deploys it to
-openlakeforge.dev. It needs the `CLOUDFLARE_API_TOKEN` and
-`CLOUDFLARE_ACCOUNT_ID` secrets in the `production` environment.
+`main` is protected: changes land only through pull requests, the
+[CI](.github/workflows/ci.yml) build must pass, and the code owner
+([`CODEOWNERS`](.github/CODEOWNERS)) approves.
 
 **Status:** the presentation page is built; the docs sync is next. See
 [PLAN.md](PLAN.md).
