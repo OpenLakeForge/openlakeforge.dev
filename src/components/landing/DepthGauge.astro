@@ -18,7 +18,18 @@ const ticks = Array.from({ length: maxDepth + 1 }, (_, m) => m);
 const digits = Array.from({ length: 10 }, (_, d) => d);
 ---
 
-<aside class="gauge" aria-label="Page sections" data-gauge data-max-depth={maxDepth} data-step={metresPerSection}>
+<div class="gauge" data-gauge data-max-depth={maxDepth} data-step={metresPerSection}>
+  <!-- The keyboard and screen-reader way in: the ruler below is a pointer-only
+       picture whose links slide out of view, so they are not tab stops. This
+       list is invisible until it receives focus, then opens beside the strip. -->
+  <nav class="keys" aria-label="Page sections">
+    <ol>
+      {sections.map(({ id, label, depth }) => (
+        <li><a href={`#${id}`} data-section={id}><span class="depth">{depth}</span>{label}</a></li>
+      ))}
+    </ol>
+  </nav>
+
   <div class="readout" aria-hidden="true">
     <span class="caption">Depth</span>
     <span class="value">
@@ -37,10 +48,10 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
           aria-hidden="true"
         />
       ))}
-      <ol>
+      <ol aria-hidden="true">
         {sections.map(({ id, label }, i) => (
           <li style={`--m: ${i * metresPerSection}`}>
-            <a href={`#${id}`} data-section={id}>
+            <a href={`#${id}`} data-section={id} tabindex="-1">
               <span class="mark">{String(i * metresPerSection).padStart(2, "0")}</span>
               <span class="name">{label}</span>
             </a>
@@ -51,7 +62,7 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     <span class="reading" aria-hidden="true"></span>
     <span class="probe" data-probe aria-hidden="true"><span data-probe-depth>0 m</span></span>
   </div>
-</aside>
+</div>
 
 <details class="jump" data-jump>
   <summary><span class="depth" data-jump-depth>00 m</span> Sections</summary>
@@ -100,7 +111,13 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     }
     return anchors[anchors.length - 1][to];
   };
-  const depthAt = (y: number) => interpolate(y, "y", "d");
+  // On a tall screen several late sections are clamped to the same position
+  // (the bottom of the page). There, the forward search would stop at the
+  // first of them: the bottom is always the deepest section instead.
+  const depthAt = (y: number) => {
+    const last = anchors[anchors.length - 1];
+    return y >= last.y - 1 ? last.d : interpolate(y, "y", "d");
+  };
   const scrollFor = (d: number) => interpolate(d, "d", "y");
 
   let current = -1;
@@ -331,6 +348,49 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   }
   .window:hover .probe { opacity: 1; }
 
+  /* ── Keyboard list: hidden until focused, then a panel left of the strip ── */
+  .keys:not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .keys:focus-within {
+    position: absolute;
+    top: var(--olf-space-4);
+    right: calc(100% + var(--olf-space-2));
+  }
+  .keys ol,
+  .jump ol {
+    margin: 0;
+    padding: var(--olf-space-2);
+    min-width: 15rem;
+    list-style: none;
+    border: 1px solid var(--olf-border-default);
+    border-radius: var(--olf-radius-lg);
+    background: var(--olf-bg-raised);
+    box-shadow: var(--olf-shadow-raised);
+  }
+  .keys a,
+  .jump ol a {
+    display: flex;
+    align-items: baseline;
+    gap: var(--olf-space-3);
+    padding: var(--olf-space-2) var(--olf-space-3);
+    border-radius: var(--olf-radius-md);
+    font-size: var(--olf-text-small);
+    color: var(--olf-text-secondary);
+    text-decoration: none;
+  }
+  .keys .depth,
+  .jump .depth { font: 500 0.6875rem / 1 var(--olf-font-mono); font-variant-numeric: tabular-nums; }
+  .keys a .depth,
+  .jump ol a .depth { width: 2.5rem; color: var(--olf-text-muted); }
+  .keys a[aria-current],
+  .jump ol a[aria-current] { background: var(--olf-bg-accent-subtle); color: var(--olf-link); }
+
   /* ── "Sections" button (narrow screens) ── */
   .jump {
     position: fixed;
@@ -366,8 +426,8 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     cursor: pointer;
   }
   .jump summary::-webkit-details-marker { display: none; }
-  .jump .depth { font: 500 0.6875rem / 1 var(--olf-font-mono); font-variant-numeric: tabular-nums; }
   .jump summary .depth { color: var(--olf-highlight); }
+  /* The list itself is styled with .keys above; here only its placement. */
   .jump ol {
     position: absolute;
     bottom: calc(100% + var(--olf-space-2));
@@ -377,27 +437,7 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     max-height: calc(100dvh - 5.5rem);
     overflow-y: auto;
     overscroll-behavior: contain;
-    min-width: 15rem;
-    margin: 0;
-    padding: var(--olf-space-2);
-    list-style: none;
-    border: 1px solid var(--olf-border-default);
-    border-radius: var(--olf-radius-lg);
-    background: var(--olf-bg-raised);
-    box-shadow: var(--olf-shadow-raised);
   }
-  .jump ol a {
-    display: flex;
-    align-items: baseline;
-    gap: var(--olf-space-3);
-    padding: var(--olf-space-2) var(--olf-space-3);
-    border-radius: var(--olf-radius-md);
-    font-size: var(--olf-text-small);
-    color: var(--olf-text-secondary);
-    text-decoration: none;
-  }
-  .jump ol a .depth { width: 2.5rem; color: var(--olf-text-muted); }
-  .jump ol a[aria-current] { background: var(--olf-bg-accent-subtle); color: var(--olf-link); }
 
   /* The strip covers the page's right padding: it needs the full 80rem page
      (from 80rem wide). Below that, the button. */
