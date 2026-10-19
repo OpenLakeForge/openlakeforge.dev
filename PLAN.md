@@ -38,14 +38,11 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
 ### Decided (2026-10-19)
 
 - **Domain**: none bought yet; `openlakeforge.com` is the likely choice.
-  Launch on GitHub Pages and keep the URL in one place (`site` in
-  `astro.config.mjs`, from `SITE_URL`), so switching to the domain later is a
-  `CNAME` file plus one variable.
-  - A project-repo Pages URL lives under a sub-path
-    (`openlakeforge.github.io/openlakeforge-website/`), which means setting
-    Astro's `base` and testing every link with it. To avoid that, either
-    rename this repo to `openlakeforge.github.io` (served at the root), or
-    buy the domain before launch.
+  This repository is named `openlakeforge.github.io`, so GitHub Pages serves
+  it at the root, **https://openlakeforge.github.io/**, with no Astro `base`
+  path to handle. The URL lives in one place (`site` in `astro.config.mjs`,
+  from `SITE_URL`), so moving to the domain later is a `CNAME` file plus one
+  variable.
 - **Docs ref**: always the **latest released tag**, never `main`. The docs
   restructure (Phase 4) lands in milestone **v0.5-alpha**, so the first
   release whose docs follow the new structure is `v0.5.0-alpha.1`.
@@ -70,7 +67,7 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
 ## 4. Repository layout (target)
 
 ```text
-openlakeforge-website/
+openlakeforge.github.io/
 ├── astro.config.mjs            Starlight config, sidebar built from the manifest
 ├── package.json
 ├── docs.lock                   the openlakeforge ref the docs are synced from (e.g. v0.4.0-alpha.1)
@@ -281,7 +278,7 @@ website builds against the new tag with zero broken links.
   (`actions/upload-pages-artifact` + `actions/deploy-pages`, pinned by SHA like
   openlakeforge's workflows).
 - **Release hook in openlakeforge**: the existing `release.yml` (on `v*` tags)
-  gets a final job that sends `repository_dispatch` to openlakeforge-website
+  gets a final job that sends `repository_dispatch` to openlakeforge.github.io
   with the tag. A small workflow there opens a PR bumping `docs.lock`, so a
   docs update is reviewed and the site never changes without a commit.
 - **Docs preview on openlakeforge PRs** (optional, later): a job that builds
