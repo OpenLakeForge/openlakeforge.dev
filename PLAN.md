@@ -321,7 +321,8 @@ Every tutorial lesson has the same shape, so a reader can stop and resume:
 - **You will**: one sentence and a time estimate.
 - **Start from**: the project state the lesson expects (the end of the
   previous lesson). Lessons 1 and 8 are the only reset points: either can
-  start from a fresh `olf init`. Lessons 9 and 10 continue lesson 8's project.
+  start from a fresh project. Lesson 8 needs Superset, so its fresh start is
+  `olf init --preset full`. Lessons 9 and 10 continue lesson 8's project.
 - Numbered steps; every command block runs as written.
 - **Check it worked**: one command (`olf status`, `olf e2e run …`, or a Trino
   query) and what it prints. When the outcome is a person's access in a
