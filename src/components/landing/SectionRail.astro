@@ -263,7 +263,7 @@ import { sections } from "../../data/landing";
     .rail { display: none; }
     .jump { display: block; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .rail, .water, .tick { transition: none; }
-  }
+  /* Reduced motion is handled once for the whole page in styles/landing.css:
+     no smooth scrolling, and every transition here (rail, water, ticks, the
+     Sections button) is disabled there with !important. */
 </style>
