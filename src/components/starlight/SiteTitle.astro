@@ -1,0 +1,29 @@
+---
+/** Starlight override: the OpenLakeForge mark and wordmark ("Lake" in highlight). */
+import Mark from "../Mark.astro";
+
+const { siteTitleHref } = Astro.locals.starlightRoute;
+---
+
+<a href={siteTitleHref} class="site-title">
+  <Mark size="2rem" />
+  <span class="wordmark" translate="no">Open<span>Lake</span>Forge</span>
+</a>
+
+<style>
+  .site-title {
+    display: flex;
+    align-items: center;
+    gap: var(--olf-space-3);
+    color: var(--olf-text-primary);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .wordmark {
+    font: 700 var(--olf-text-h4) / 1 var(--olf-font-heading);
+    letter-spacing: -0.01em;
+  }
+  .wordmark span {
+    color: var(--olf-highlight);
+  }
+</style>

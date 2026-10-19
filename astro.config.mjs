@@ -1,0 +1,61 @@
+import { defineConfig } from "astro/config";
+import starlight from "@astrojs/starlight";
+import sitemap from "@astrojs/sitemap";
+import { deepWaterTheme } from "./src/lib/code-theme.ts";
+import { repositoryUrl } from "./src/lib/nav.ts";
+
+// The public URL lives here only: switching to a custom domain later is a
+// CNAME file plus SITE_URL (PLAN.md, "Decided").
+const site = process.env.SITE_URL ?? "https://openlakeforge.github.io";
+
+export default defineConfig({
+  site,
+  integrations: [
+    sitemap(),
+    starlight({
+      title: "OpenLakeForge",
+      description: "The open-source lakehouse for small data teams: your modern lakehouse, forged in one command.",
+      favicon: "/favicon.svg",
+      social: [{ icon: "github", label: "GitHub", href: repositoryUrl }],
+      customCss: [
+        "@fontsource/instrument-serif/400.css",
+        "@fontsource/instrument-serif/400-italic.css",
+        "@fontsource-variable/space-grotesk",
+        "@fontsource-variable/inter",
+        "@fontsource-variable/jetbrains-mono",
+        "./src/styles/tokens.css",
+        "./src/styles/starlight.css",
+      ],
+      components: {
+        SiteTitle: "./src/components/starlight/SiteTitle.astro",
+        SocialIcons: "./src/components/starlight/SocialIcons.astro",
+      },
+      expressiveCode: {
+        themes: [deepWaterTheme],
+        useStarlightUiThemeColors: false,
+        styleOverrides: {
+          borderRadius: "10px",
+          borderColor: "#1c4260",
+          codeFontFamily: "var(--olf-font-mono)",
+          uiFontFamily: "var(--olf-font-mono)",
+          codeFontSize: "0.875rem",
+          frames: {
+            shadowColor: "transparent",
+            editorTabBarBackground: "#0b2235",
+            editorActiveTabBackground: "#0f2a40",
+            editorActiveTabIndicatorBottomColor: "#5cc9ff",
+            editorActiveTabIndicatorTopColor: "transparent",
+            terminalTitlebarBackground: "#0b2235",
+            terminalTitlebarBorderBottomColor: "#1c4260",
+            terminalTitlebarDotsOpacity: "0.35",
+            terminalBackground: "#0f2a40",
+            inlineButtonBorder: "#3d6b8c",
+            inlineButtonForeground: "#9cbad0",
+          },
+        },
+      },
+      // Phase 3 replaces this with the sidebar built from docs/navigation.yaml.
+      sidebar: [{ label: "Style guide", items: [{ autogenerate: { directory: "style-guide" } }] }],
+    }),
+  ],
+});

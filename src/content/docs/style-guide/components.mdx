@@ -1,0 +1,88 @@
+---
+title: Components
+description: Callouts, code blocks, tabs, steps and cards in the Deep Water theme.
+sidebar:
+  order: 2
+---
+
+import { Aside, Badge, Card, CardGrid, LinkCard, Steps, TabItem, Tabs } from "@astrojs/starlight/components";
+
+## Callouts
+
+The sync turns GitHub alerts (`> [!NOTE]`…) into these (PLAN.md, rule T6).
+
+<Aside type="note">Authentication is off for local evaluation; every service signs you in as admin.</Aside>
+<Aside type="tip">Run `olf e2e run --env local` after deploy to verify the whole stack.</Aside>
+<Aside type="caution">Destroying the stack deletes every bucket in the local object store.</Aside>
+<Aside type="danger">Never commit the GitHub App private key to `lakehouse_code/`.</Aside>
+
+## Code
+
+```bash title="Terminal"
+uv tool install "openlakeforge==0.4.0a1" --python 3.12
+olf init                      # writes openlakeforge.yaml and lakehouse_code/
+olf deploy --provider local   # builds the kind cluster and the whole platform
+```
+
+```yaml title="openlakeforge.yaml"
+apiVersion: openlakeforge.io/v1
+kind: DeploymentProfile
+spec:
+  provider: local
+  preset: slim        # or full
+  stages: [dev, prod]
+```
+
+```python title="pipelines/dagster/definitions.py"
+from dagster import Definitions, asset
+
+@asset(group_name="sales")
+def order_revenue(orders: list[dict]) -> float:
+    """Gold mart: total revenue per day."""
+    return sum(row["amount"] for row in orders)
+
+defs = Definitions(assets=[order_revenue])
+```
+
+## Provider tabs
+
+<Tabs syncKey="provider">
+  <TabItem label="Local · kind">
+    ```bash
+    olf deploy --provider local
+    ```
+  </TabItem>
+  <TabItem label="AWS">
+    ```bash
+    olf deploy --provider aws
+    ```
+  </TabItem>
+  <TabItem label="Azure">
+    ```bash
+    olf deploy --provider azure
+    ```
+  </TabItem>
+</Tabs>
+
+## Steps
+
+<Steps>
+
+1. Install the CLI: `uv tool install openlakeforge`.
+2. Create a project: `olf init`.
+3. Deploy: `olf deploy --provider local`, then open `http://olf.localhost`.
+
+</Steps>
+
+## Badges
+
+<Badge text="Bronze" variant="caution" /> <Badge text="Silver" variant="note" /> <Badge text="Gold" variant="tip" /> <Badge text="Alpha" variant="danger" />
+
+## Cards
+
+<CardGrid>
+  <Card title="Slim" icon="rocket">Ingestion, validation, Iceberg, catalog, Trino, dbt and Dagster.</Card>
+  <Card title="Full" icon="puzzle">Slim plus OpenMetadata governance and Superset dashboards.</Card>
+</CardGrid>
+
+<LinkCard title="Typography and prose" description="Headings, lists, tables and quotes." href="/style-guide/" />

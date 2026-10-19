@@ -1,0 +1,38 @@
+---
+/** Starlight override: the header's mono nav links, then Starlight's own social icons. */
+import Default from "@astrojs/starlight/components/SocialIcons.astro";
+import { headerLinks } from "../../lib/nav";
+
+const path = Astro.url.pathname;
+---
+
+<nav aria-label="Main">
+  {headerLinks.map(({ label, href }) => (
+    <a href={href} aria-current={path.startsWith(href) ? "page" : undefined}>{label}</a>
+  ))}
+</nav>
+<Default />
+
+<style>
+  nav {
+    display: flex;
+    gap: var(--olf-space-6);
+    margin-inline-end: var(--olf-space-2);
+  }
+  a {
+    font: 500 0.8125rem / 1 var(--olf-font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--olf-text-secondary);
+    text-decoration: none;
+  }
+  a:hover,
+  a[aria-current="page"] {
+    color: var(--olf-text-primary);
+  }
+  @media (max-width: 64rem) {
+    nav {
+      display: none;
+    }
+  }
+</style>

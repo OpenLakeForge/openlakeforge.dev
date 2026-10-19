@@ -1,0 +1,54 @@
+---
+/**
+ * Placeholder home until the presentation page lands (PLAN.md, Phase 2).
+ * It already uses the same tokens and fonts, so the theme is shared.
+ */
+import "@fontsource/instrument-serif/400.css";
+import "@fontsource/instrument-serif/400-italic.css";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
+import "../styles/tokens.css";
+import Mark from "../components/Mark.astro";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>OpenLakeForge</title>
+  </head>
+  <body>
+    <main>
+      <Mark size="5.5rem" />
+      <p class="label">Open-source lakehouse · Apache-2.0 · Alpha</p>
+      <h1>Your modern lakehouse,<br /><em>forged in one command.</em></h1>
+      <p class="lede">The presentation page is on its way. Meanwhile, the theme is visible in the <a href="/style-guide/">style guide</a>.</p>
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  :root { --mark-anvil: var(--abyss-100); }
+  @media (prefers-color-scheme: light) { :root:not([data-theme]) { --mark-anvil: var(--brand-anvil); } }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: var(--olf-bg-base);
+    color: var(--olf-text-primary);
+    font: var(--olf-text-body) / var(--olf-leading-body) var(--olf-font-body);
+  }
+</style>
+
+<style>
+  main { display: flex; flex-direction: column; align-items: center; gap: var(--olf-space-6); padding: var(--olf-space-6); text-align: center; }
+  .label { margin: 0; font: 500 var(--olf-text-label) / 1.33 var(--olf-font-mono); letter-spacing: var(--olf-tracking-label); text-transform: uppercase; color: var(--olf-highlight); }
+  h1 { margin: 0; font: 400 clamp(2.5rem, 7vw, var(--olf-text-display)) / var(--olf-leading-display) var(--olf-font-display); }
+  em { color: var(--olf-highlight); }
+  .lede { max-width: 36rem; margin: 0; color: var(--olf-text-secondary); }
+  a { color: var(--olf-link); }
+</style>

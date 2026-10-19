@@ -1,0 +1,237 @@
+/* Starlight → Deep Water.
+ *
+ * Starlight styles live in cascade layers, so these unlayered rules win
+ * without !important. Starlight sets data-theme on <html> to "dark" or
+ * "light", the attribute tokens.css switches on, so the --olf-* semantic
+ * tokens already follow the theme toggle. Only Starlight's gray ramp, which
+ * runs from "most contrast" (white) to "background" (black), needs a value
+ * per theme. */
+
+:root {
+  --sl-font: var(--olf-font-body);
+  --sl-font-mono: var(--olf-font-mono);
+
+  /* Gray ramp, dark: the water column, from surface light down to the bed. */
+  --sl-color-white: var(--abyss-50);
+  --sl-color-gray-1: var(--abyss-100);
+  --sl-color-gray-2: var(--abyss-200);
+  --sl-color-gray-3: var(--abyss-300);
+  --sl-color-gray-4: var(--abyss-400);
+  --sl-color-gray-5: var(--abyss-700);
+  --sl-color-gray-6: var(--abyss-800);
+  --sl-color-black: var(--abyss-950);
+
+  --sl-color-accent-low: var(--lake-900);
+  --sl-color-accent: var(--lake-400);
+  --sl-color-accent-high: var(--shallows-300);
+
+  /* Semantic surfaces: the same tokens as the portal, so they flip by themselves. */
+  --sl-color-bg: var(--olf-bg-base);
+  --sl-color-bg-nav: var(--olf-bg-base);
+  --sl-color-bg-sidebar: var(--olf-bg-base);
+  --sl-color-bg-inline-code: var(--olf-bg-raised);
+  --sl-color-hairline: var(--olf-border-subtle);
+  --sl-color-hairline-light: var(--olf-border-default);
+  --sl-color-text-accent: var(--olf-link);
+
+  --sl-content-width: var(--olf-content-width);
+  --sl-sidebar-width: var(--olf-sidebar-width);
+
+  /* The mark's anvil: light on dark, brand navy on light. */
+  --mark-anvil: var(--abyss-100);
+
+  /* Starlight's hue families (badges, card icons) → Deep Water status colours.
+     Purple, Starlight's "tip", becomes the shallows azure, like our Tip callout. */
+  --sl-color-blue-low: var(--olf-tint-info);
+  --sl-color-blue: var(--lake-400);
+  --sl-color-blue-high: var(--lake-200);
+  --sl-color-purple-low: var(--olf-tint-highlight);
+  --sl-color-purple: var(--shallows-400);
+  --sl-color-purple-high: var(--shallows-200);
+  --sl-color-green-low: var(--olf-tint-success);
+  --sl-color-green: var(--reed-400);
+  --sl-color-green-high: var(--reed-400);
+  --sl-color-orange-low: var(--olf-tint-warning);
+  --sl-color-orange: var(--sand-400);
+  --sl-color-orange-high: var(--sand-400);
+  --sl-color-red-low: var(--olf-tint-danger);
+  --sl-color-red: var(--rose-400);
+  --sl-color-red-high: var(--rose-400);
+}
+
+:root[data-theme="light"] {
+  --sl-color-white: var(--abyss-900);
+  --sl-color-gray-1: var(--abyss-850);
+  --sl-color-gray-2: var(--abyss-700);
+  --sl-color-gray-3: var(--abyss-600);
+  --sl-color-gray-4: var(--abyss-500);
+  --sl-color-gray-5: var(--abyss-200);
+  --sl-color-gray-6: var(--abyss-100);
+  --sl-color-gray-7: var(--abyss-50);
+  --sl-color-black: #ffffff;
+
+  --sl-color-accent-low: var(--lake-50);
+  --sl-color-accent: var(--lake-600);
+  --sl-color-accent-high: var(--lake-700);
+
+  --mark-anvil: var(--brand-anvil);
+
+  --sl-color-blue: var(--lake-600);
+  --sl-color-blue-high: var(--lake-700);
+  --sl-color-purple: var(--shallows-600);
+  --sl-color-purple-high: var(--shallows-700);
+  --sl-color-green: var(--reed-600);
+  --sl-color-green-high: var(--reed-600);
+  --sl-color-orange: var(--sand-600);
+  --sl-color-orange-high: var(--sand-600);
+  --sl-color-red: var(--rose-600);
+  --sl-color-red-high: var(--rose-600);
+}
+
+/* ── Badges: mono, uppercase, tinted, like the Tag component ── */
+
+.sl-badge {
+  font-family: var(--olf-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: var(--olf-tracking-label);
+  text-transform: uppercase;
+  border-radius: var(--olf-radius-sm);
+}
+
+/* ── Tabs: the mono provider tabs of the Code block component ── */
+
+starlight-tabs [role="tab"] {
+  font: 500 var(--olf-text-label) / 1.33 var(--olf-font-mono);
+  letter-spacing: var(--olf-tracking-label);
+  text-transform: uppercase;
+  color: var(--olf-text-muted);
+}
+starlight-tabs [role="tab"][aria-selected="true"] {
+  color: var(--olf-text-primary);
+  box-shadow: inset 0 -2px 0 var(--olf-highlight);
+}
+
+/* ── Type: Space Grotesk for structure, mono for anything a machine says ── */
+
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6),
+h1#_top {
+  font-family: var(--olf-font-heading);
+  letter-spacing: -0.01em;
+}
+h1#_top {
+  font-weight: 700;
+}
+.sl-markdown-content :is(h2, h3) {
+  font-weight: 700;
+}
+
+.sl-markdown-content :not(pre) > code {
+  padding: 0.1em 0.35em;
+  border: 1px solid var(--olf-border-subtle);
+  border-radius: var(--olf-radius-sm);
+  color: var(--olf-link);
+}
+
+/* ── Header ── */
+
+header.header {
+  border-bottom-color: var(--olf-border-subtle);
+}
+
+/* ── Sidebar: mono group labels, active page as a tinted row with a ripple bar ── */
+
+.sidebar-content .group-label .large {
+  font: 500 0.6875rem / 1.4 var(--olf-font-mono);
+  letter-spacing: var(--olf-tracking-label);
+  text-transform: uppercase;
+  color: var(--olf-text-muted);
+}
+.sidebar-content a {
+  border-radius: var(--olf-radius-md);
+  color: var(--olf-text-secondary);
+}
+.sidebar-content a:hover {
+  color: var(--olf-text-primary);
+}
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover {
+  background: var(--olf-bg-accent-subtle);
+  color: var(--olf-link);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--olf-highlight);
+}
+
+/* ── Table of contents ── */
+
+starlight-toc h2 {
+  font: 500 0.6875rem / 1.4 var(--olf-font-mono);
+  letter-spacing: var(--olf-tracking-label);
+  text-transform: uppercase;
+  color: var(--olf-text-muted);
+}
+starlight-toc a[aria-current="true"] {
+  color: var(--olf-link);
+}
+
+/* ── Asides = the Callout component: left rule, tint, mono title, no icon ── */
+
+.starlight-aside {
+  border-inline-start: 3px solid var(--sl-color-asides-border);
+  border-radius: var(--olf-radius-md);
+  color: var(--olf-text-primary);
+}
+.starlight-aside__title {
+  font: 500 var(--olf-text-label) / 1.33 var(--olf-font-mono);
+  letter-spacing: var(--olf-tracking-label);
+  text-transform: uppercase;
+}
+.starlight-aside__icon {
+  display: none;
+}
+.starlight-aside--note {
+  --sl-color-asides-text-accent: var(--olf-info);
+  --sl-color-asides-border: var(--olf-info);
+  background-color: var(--olf-tint-info);
+}
+.starlight-aside--tip {
+  --sl-color-asides-text-accent: var(--olf-highlight);
+  --sl-color-asides-border: var(--olf-highlight);
+  background-color: var(--olf-tint-highlight);
+}
+.starlight-aside--caution {
+  --sl-color-asides-text-accent: var(--olf-warning);
+  --sl-color-asides-border: var(--olf-warning);
+  background-color: var(--olf-tint-warning);
+}
+.starlight-aside--danger {
+  --sl-color-asides-text-accent: var(--olf-danger);
+  --sl-color-asides-border: var(--olf-danger);
+  background-color: var(--olf-tint-danger);
+}
+
+/* ── Tables ── */
+
+.sl-markdown-content table {
+  border-radius: var(--olf-radius-lg);
+}
+.sl-markdown-content th {
+  font: 500 var(--olf-text-label) / 1.33 var(--olf-font-mono);
+  letter-spacing: var(--olf-tracking-label);
+  text-transform: uppercase;
+  color: var(--olf-text-muted);
+}
+
+/* ── Pagination and cards: the bordered tiles from the Figma docs page ── */
+
+.pagination-links a,
+.card,
+.sl-link-card {
+  border-color: var(--olf-border-default);
+  border-radius: var(--olf-radius-lg);
+  box-shadow: none;
+}
+.pagination-links a:hover,
+.sl-link-card:hover {
+  border-color: var(--olf-accent);
+  box-shadow: var(--olf-glow);
+}

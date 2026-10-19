@@ -1,0 +1,46 @@
+---
+title: Typography and prose
+description: Every text element the synced docs use, rendered in the Deep Water theme. Not published in the docs sidebar after Phase 3.
+sidebar:
+  order: 1
+---
+
+This page and its sibling show every element the documentation uses, so the
+theme can be checked against the Figma *Website → Documentation* frame. The
+real pages arrive with the docs sync (PLAN.md, Phase 3).
+
+Bring up the full OpenLakeForge stack on a local kind cluster, run the sample
+pipeline end to end, and open every service from the platform portal. You need
+**Docker** and [uv](https://docs.astral.sh/uv/); `olf` provisions its own
+pinned Terraform, Helm, kubectl and kind.
+
+## Prerequisites
+
+You need Docker, kind and uv. Everything else is pinned and fetched by `olf`
+itself, so the versions always match the release.
+
+1. Install the CLI with `uv tool install openlakeforge`.
+2. Create a project with `olf init`.
+3. Deploy with `olf deploy --provider local`.
+
+- **Slim** (default): ingestion, validation, Iceberg, catalog, Trino, dbt and Dagster.
+- **Full**: Slim plus OpenMetadata governance and Superset dashboards.
+
+### Slim or Full?
+
+| Preset | Includes | Use it when |
+| --- | --- | --- |
+| **Slim** | Ingestion, validation, Iceberg, catalog, Trino, dbt and Dagster | You want the shortest path to a working lakehouse |
+| **Full** | Slim + OpenMetadata + Superset | You also want governance, lineage and dashboards |
+
+#### Fourth-level heading
+
+> A change is built **once** into an immutable project revision. PROD never
+> rebuilds, and no data is copied between stages.
+
+Text with a [link to the quickstart](/style-guide/components/), some
+`inline code`, *emphasis* and a keyboard shortcut <kbd>Ctrl</kbd> + <kbd>K</kbd>.
+
+---
+
+The end of the page, after a rule.
