@@ -1,0 +1,20 @@
+---
+import { targets } from "../../data/landing";
+---
+
+<section class="wrap section" id="deploy-anywhere">
+  <div class="section-head">
+    <p class="eyebrow">Deploy anywhere</p>
+    <h2 class="title">Same contracts on your laptop and in the cloud.</h2>
+  </div>
+  <div class="grid grid-3">
+    {targets.map(({ eyebrow, title, text, command }) => (
+      <article class="card">
+        <p class="eyebrow">{eyebrow}</p>
+        <h3>{title}</h3>
+        <p>{text}</p>
+        <code>{command}</code>
+      </article>
+    ))}
+  </div>
+</section>

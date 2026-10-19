@@ -1,0 +1,40 @@
+---
+import { repositoryUrl } from "../../lib/nav";
+---
+
+<footer>
+  <div class="wrap">
+    <svg class="ripples" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-linecap="round">
+        <path stroke-width="1.5" opacity=".6" d="M0 40C240 70 480 82 720 82S1200 70 1440 40" />
+        <path stroke-width="1.2" opacity=".35" d="M0 64C240 92 480 104 720 104S1200 92 1440 64" />
+        <path stroke-width="1" opacity=".18" d="M0 86C240 110 480 118 720 118S1200 110 1440 86" />
+      </g>
+    </svg>
+    <div class="row">
+      <p>© OpenLakeForge · Apache-2.0</p>
+      <nav aria-label="Footer">
+        <a href="/docs/">Docs</a>
+        <a href="/docs/decisions/">ADRs</a>
+        <a href={`${repositoryUrl}/releases`}>Releases</a>
+        <a href={repositoryUrl}>GitHub</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<style>
+  footer { margin-top: var(--olf-space-24); padding-bottom: var(--olf-space-10); }
+  .ripples { width: 100%; height: 3.75rem; color: var(--olf-highlight); }
+  .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--olf-space-4); margin-top: var(--olf-space-6); }
+  p, a {
+    margin: 0;
+    font: 500 0.6875rem / 1.4 var(--olf-font-mono);
+    letter-spacing: var(--olf-tracking-label);
+    text-transform: uppercase;
+    color: var(--olf-text-muted);
+    text-decoration: none;
+  }
+  a:hover { color: var(--olf-text-primary); }
+  nav { display: flex; gap: var(--olf-space-8); }
+</style>

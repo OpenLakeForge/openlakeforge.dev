@@ -1,0 +1,106 @@
+/**
+ * Copy for the presentation page. It follows the Figma "Website → Presentation"
+ * frame, whose text comes from the openlakeforge README. Keep the two in step:
+ * a claim here must be true of the released platform.
+ */
+
+/** The latest release, shown in the announcement bar. */
+export const release = { version: "0.4.0-alpha.1", note: "Dex-only identity and one-command GitHub App setup." };
+
+/** The README Quickstart. Phase 3 reads these from the synced README instead. */
+export const installCommands = [
+  { command: "uv tool install openlakeforge", comment: "" },
+  { command: "olf init", comment: "openlakeforge.yaml + lakehouse_code/" },
+  { command: "olf deploy --provider local", comment: "kind cluster + the whole platform" },
+];
+
+export const components = [
+  { key: "dlt", name: "dlt", file: "dlt.png" },
+  { key: "floe", name: "Floe", file: "floe.png" },
+  { key: "iceberg", name: "Iceberg", file: "iceberg.png" },
+  { key: "polaris", name: "Polaris", file: "polaris.png" },
+  { key: "dbt", name: "dbt", file: "dbt.png" },
+  { key: "trino", name: "Trino", file: "trino.svg" },
+  { key: "dagster", name: "Dagster", file: "dagster.svg" },
+  { key: "openmetadata", name: "OpenMetadata", file: "openmetadata.svg" },
+  { key: "superset", name: "Superset", file: "superset.png" },
+  { key: "k8s", name: "Kubernetes", file: "k8s.svg" },
+];
+
+export const layers = [
+  { tag: "bronze", label: "Bronze", tool: "dlt", text: "Source files land as CSV in object storage." },
+  { tag: "silver", label: "Silver", tool: "Floe", text: "Technical contracts validate them into Iceberg tables." },
+  { tag: "gold", label: "Gold", tool: "dbt-trino on Trino", text: "Business marts are modelled in SQL and run in the query engine." },
+];
+
+export const reasons = [
+  { eyebrow: "Small teams", title: "Built for small data teams", text: "Less operational work to run a modern lakehouse." },
+  { eyebrow: "Modular", title: "Start with the core", text: "Run the core data path alone, add governance and dashboards when you need them." },
+  { eyebrow: "Self-hosted", title: "Open and yours", text: "Your infrastructure, your storage, your data. Apache-2.0." },
+  { eyebrow: "Portable", title: "Deploy anywhere", text: "Local Kubernetes, AWS and Azure share the same platform contracts." },
+  { eyebrow: "Open format", title: "Apache Iceberg", text: "Storage stays independent from the engines that read it." },
+  { eyebrow: "Batteries included", title: "Infrastructure included", text: "Kubernetes, Terraform and Helm ship with the platform, pinned and tested." },
+];
+
+export const codeLayers = [
+  { name: "Infrastructure", what: "Terraform + Helm, pinned in the release", file: "infra/ · component-catalog.yaml" },
+  { name: "Platform", what: "Provider, stages, preset, identity", file: "openlakeforge.yaml" },
+  { name: "Data products", what: "Domains, products, sources", file: "lakehouse.yaml · source.yaml" },
+  { name: "Bronze → Silver", what: "Ingestion and technical contracts", file: "bronze/ · silver/" },
+  { name: "Gold", what: "Business marts in SQL", file: "gold/ (dbt)" },
+  { name: "Orchestration", what: "One job per product", file: "pipelines/dagster/" },
+  { name: "Dashboards", what: "Reports over Gold", file: "dashboards/superset/" },
+  { name: "Delivery", what: "Build once, promote DEV → PROD", file: "GitHub Actions · revisions" },
+];
+
+/** Illustrative agent session: real olf commands, ending in a reviewed pull request. */
+export const agentSession: { kind: "you" | "cmd" | "note" | "ok" | "wait" | "gap"; text?: string; comment?: string }[] = [
+  { kind: "you", text: "Add our daily orders export and a revenue-by-region mart." },
+  { kind: "gap" },
+  { kind: "note", text: "reads   openlakeforge.yaml, lakehouse.yaml" },
+  { kind: "cmd", text: "olf source new orders" },
+  { kind: "note", text: "writes  silver/sales/orders.yaml", comment: "Floe contract" },
+  { kind: "cmd", text: "olf product new sales/revenue_by_region" },
+  { kind: "note", text: "writes  gold/revenue_by_region/models/*.sql" },
+  { kind: "note", text: "opens   pull request #42" },
+  { kind: "gap" },
+  { kind: "ok", text: "build-revision   sha256:3f9c…" },
+  { kind: "ok", text: "deploy-stage dev · e2e passed" },
+  { kind: "wait", text: "prod waits for your approval" },
+];
+
+export const projectTree = [
+  { line: "my-lakehouse/", comment: "" },
+  { line: "├── openlakeforge.yaml", comment: "provider, stages, preset" },
+  { line: "└── lakehouse_code/", comment: "" },
+  { line: "    ├── lakehouse.yaml", comment: "domains and data products" },
+  { line: "    ├── bronze/", comment: "sources and their dlt loaders" },
+  { line: "    ├── silver/", comment: "Floe contracts per domain" },
+  { line: "    ├── gold/", comment: "dbt projects per product" },
+  { line: "    ├── pipelines/dagster/", comment: "one job per product" },
+  { line: "    └── dashboards/superset/", comment: "" },
+];
+
+export const presets = [
+  { name: "Slim", isDefault: true, includes: "Ingestion, validation, Iceberg, catalog, Trino, dbt and Dagster.", when: "The shortest path to a working lakehouse." },
+  { name: "Full", isDefault: false, includes: "Slim + OpenMetadata governance + Superset dashboards.", when: "You also want lineage, a catalog UI and dashboards." },
+];
+
+export const targets = [
+  { eyebrow: "Local", title: "kind on Docker", text: "The whole platform on your machine. Plain HTTP on *.olf.localhost, no certificates.", command: "olf deploy --provider local" },
+  { eyebrow: "AWS", title: "EKS, S3, RDS, Glue", text: "Managed Kubernetes, storage, database and catalog behind the same contracts.", command: "olf deploy --provider aws" },
+  { eyebrow: "Azure", title: "AKS and ACR", text: "The in-cluster platform services on Azure Kubernetes Service.", command: "olf deploy --provider azure" },
+];
+
+export const fit = {
+  yes: [
+    "A small team that wants a working batch lakehouse without building the platform first",
+    "Keeping data on your own Kubernetes, storage and cloud account",
+    "Moving the same project between a laptop, AWS and Azure",
+  ],
+  notYet: [
+    "Streaming workloads: v1 is batch-first",
+    "Production-critical use: the project is alpha",
+    "Teams that want a fully managed SaaS",
+  ],
+};

@@ -6,3 +6,5 @@ export const headerLinks = [
 ];
 
 export const repositoryUrl = "https://github.com/OpenLakeForge/openlakeforge";
+export const quickstartHref = "/docs/get-started/quickstart/";
+export const docsHref = "/docs/";

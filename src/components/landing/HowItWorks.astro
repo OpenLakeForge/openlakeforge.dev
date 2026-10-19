@@ -1,0 +1,36 @@
+---
+import ThemedChart from "./ThemedChart.astro";
+import { layers } from "../../data/landing";
+import dark from "../../assets/charts/architecture-local-dark.svg";
+import light from "../../assets/charts/architecture-local-light.svg";
+---
+
+<section class="wrap section" id="how-it-works">
+  <div class="section-head">
+    <p class="eyebrow">How it works</p>
+    <h2 class="title">One platform, from raw files to dashboards.</h2>
+    <p class="lede">
+      Data moves through three medallion layers, each owned by one tool. Dagster orchestrates every run; around that path
+      sit the catalog, the query engine and, when you want them, governance and dashboards.
+    </p>
+  </div>
+  <ThemedChart
+    dark={dark}
+    light={light}
+    alt="OpenLakeForge architecture: Dagster orchestrates dlt, Floe and dbt-trino over Bronze, Silver and Gold Iceberg tables in object storage, queried by Trino and Superset and governed by OpenMetadata"
+  />
+  <div class="grid grid-3 layers">
+    {layers.map(({ tag, label, tool, text }) => (
+      <article class="card">
+        <span class={`tag tag-${tag}`}>{label}</span>
+        <p class="text">{text}</p>
+        <code>{tool}</code>
+      </article>
+    ))}
+  </div>
+</section>
+
+<style>
+  .layers { margin-top: var(--olf-space-5); }
+  .card .text { font-size: var(--olf-text-body); color: var(--olf-text-primary); }
+</style>

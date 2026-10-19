@@ -1,0 +1,47 @@
+---
+import { presets, projectTree } from "../../data/landing";
+
+const width = Math.max(...projectTree.map((l) => l.line.length)) + 3;
+---
+
+<section class="wrap section" id="your-project">
+  <div class="split">
+    <div class="left">
+      <div class="section-head">
+        <p class="eyebrow">Your project</p>
+        <h2 class="title">You own the data products. The platform stays in the box.</h2>
+        <p class="lede">
+          <code>olf init</code> creates a writable project. Terraform, Helm and images stay in the installed distribution,
+          so your repository holds only what is yours.
+        </p>
+      </div>
+      <div class="grid grid-2">
+        {presets.map(({ name, isDefault, includes, when }) => (
+          <article class:list={["card", { default: isDefault }]}>
+            <h3>{name} {isDefault && <span class="badge">Default</span>}</h3>
+            <p class="includes">{includes}</p>
+            <p class="when">{when}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+    <pre class="terminal tree" aria-label="Project layout"><code>{projectTree.map(({ line, comment }) => (
+      <span class="line">{comment ? line.padEnd(width) : line}{comment && <span class="comment"># {comment}</span>}</span>
+    ))}</code></pre>
+  </div>
+</section>
+
+<style>
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--olf-space-12); align-items: center; }
+  .section-head { margin-bottom: var(--olf-space-8); }
+  .lede code { font-family: var(--olf-font-mono); font-size: 0.9em; color: var(--olf-link); }
+  .card.default { border-color: var(--olf-accent); }
+  .card h3 { display: flex; align-items: center; gap: var(--olf-space-3); font-size: var(--olf-text-h3); }
+  .badge { font: 500 0.6875rem / 1 var(--olf-font-mono); letter-spacing: var(--olf-tracking-label); text-transform: uppercase; color: var(--olf-link); }
+  .card .includes { color: var(--olf-text-primary); }
+  .card .when { color: var(--olf-text-muted); }
+  .line { display: block; white-space: pre; }
+  @media (max-width: 64rem) {
+    .split { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>

@@ -1,0 +1,79 @@
+---
+import { agentSession, codeLayers } from "../../data/landing";
+
+// Inside <pre>, template whitespace is rendered, so each line is built here
+// and emitted on a single template line below.
+const marks = { you: "> ", cmd: "$ ", ok: "✓ ", wait: "… ", note: "", gap: "" } as const;
+const lines = agentSession.map(({ kind, text = "", comment }) => ({ kind, mark: marks[kind], text, comment }));
+---
+
+<section class="wrap section" id="everything-as-code">
+  <div class="section-head">
+    <p class="eyebrow">Everything as code · AI-ready</p>
+    <h2 class="title">Every layer is code.<br /><span class="accent">Every layer is AI-ready.</span></h2>
+    <p class="lede">
+      Infrastructure, data contracts, SQL, pipelines, dashboards and CI are all declarative files in Git. An AI agent reads
+      the same source of truth as your team, proposes changes as pull requests, and the platform validates them like any
+      other change.
+    </p>
+  </div>
+  <div class="split">
+    <table>
+      <caption class="sr-only">Each platform layer and the files that describe it</caption>
+      <tbody>
+        {codeLayers.map(({ name, what, file }) => (
+          <tr>
+            <th scope="row"><span class="name">{name}</span><span class="what">{what}</span></th>
+            <td><code>{file}</code></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <figure class="session">
+      <figcaption><span>Agent session</span><span>Illustrative</span></figcaption>
+      <pre class="terminal"><code>{lines.map(({ kind, mark, text, comment }) => <span class={`line ${kind}`}>{(kind === "you" || kind === "cmd") ? <span class="prompt">{mark}</span> : mark}{text}{comment && <span class="comment">{`   # ${comment}`}</span>}</span>)}</code></pre>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--olf-space-6); align-items: start; }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--olf-border-default);
+    border-radius: var(--olf-radius-lg);
+    overflow: hidden;
+  }
+  tr:nth-child(odd) { background: var(--olf-bg-surface); }
+  th, td { padding: var(--olf-space-3) var(--olf-space-5); text-align: left; vertical-align: middle; }
+  th { display: flex; flex-direction: column; gap: var(--olf-space-0-5); font-weight: 400; }
+  .name { font: 600 var(--olf-text-body) / 1.5 var(--olf-font-body); }
+  .what { font-size: var(--olf-text-small); line-height: 1.4; color: var(--olf-text-secondary); }
+  td code { font: var(--olf-text-small) / 1.4 var(--olf-font-mono); color: var(--olf-link); }
+  td:last-child { text-align: right; }
+  .session { margin: 0; }
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 var(--olf-space-1) var(--olf-space-2);
+    font: 500 0.6875rem / 1.4 var(--olf-font-mono);
+    letter-spacing: var(--olf-tracking-label);
+    text-transform: uppercase;
+    color: var(--olf-text-muted);
+  }
+  .line { display: block; white-space: pre; min-height: 1.7em; }
+  .gap { min-height: 0.75em; }
+  .note { color: var(--abyss-400); }
+  .ok { color: var(--reed-400); }
+  .wait { color: var(--sand-400); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  @media (max-width: 64rem) {
+    .split { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 48rem) {
+    tr { display: flex; flex-direction: column; }
+    td:last-child { text-align: left; padding-top: 0; }
+  }
+</style>

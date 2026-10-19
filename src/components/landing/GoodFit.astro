@@ -1,0 +1,29 @@
+---
+import { fit } from "../../data/landing";
+---
+
+<section class="wrap section" id="good-fit">
+  <div class="section-head">
+    <p class="eyebrow">Is it a good fit?</p>
+    <h2 class="title">Honest about where it stands.</h2>
+  </div>
+  <div class="grid grid-2">
+    <article class="card">
+      <h3>A good fit</h3>
+      <ul>{fit.yes.map((item) => <li class="yes">{item}</li>)}</ul>
+    </article>
+    <article class="card">
+      <h3>Not yet</h3>
+      <ul>{fit.notYet.map((item) => <li class="no">{item}</li>)}</ul>
+    </article>
+  </div>
+</section>
+
+<style>
+  .card h3 { font-size: var(--olf-text-h3); }
+  ul { display: flex; flex-direction: column; gap: var(--olf-space-3); margin: 0; padding: 0; list-style: none; }
+  li { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr); gap: var(--olf-space-2); color: var(--olf-text-secondary); }
+  li::before { font-weight: 600; }
+  .yes::before { content: "✓"; color: var(--olf-success); }
+  .no::before { content: "—"; color: var(--olf-warning); }
+</style>

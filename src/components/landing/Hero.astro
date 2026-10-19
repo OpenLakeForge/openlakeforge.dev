@@ -1,0 +1,99 @@
+---
+import Mark from "../Mark.astro";
+import { installCommands } from "../../data/landing";
+import { quickstartHref, repositoryUrl } from "../../lib/nav";
+
+// Lake-bed depth contours: one outline, scaled and turned.
+const outline = "M0-100C70-104 130-70 150-20S135 85 70 102-55 118-110 80-160-10-120-60-55-97 0-100Z";
+const rings = [[0.6, 8, 0.9], [1.1, 4, 0.8], [1.7, -2, 0.7], [2.4, -7, 0.6], [3.2, -11, 0.5], [4.1, -14, 0.4], [5.1, -16, 0.3], [6.3, -18, 0.2], [7.6, -20, 0.15], [9, -22, 0.1]];
+const clipboard = installCommands.map((c) => c.command).join("\n");
+---
+
+<section class="hero">
+  <svg class="contours" viewBox="0 0 1200 800" aria-hidden="true">
+    <g fill="none" stroke="currentColor" transform="translate(600 380)">
+      {rings.map(([s, r, o]) => <path d={outline} transform={`scale(${s}) rotate(${r})`} opacity={o} stroke-width={(1.2 / s).toFixed(3)} />)}
+    </g>
+  </svg>
+  <div class="wrap content">
+    <Mark size="5.5rem" />
+    <p class="eyebrow">Open-source lakehouse · Apache-2.0 · Alpha</p>
+    <h1 class="display">Your modern lakehouse,<br /><span class="accent">forged in one command.</span></h1>
+    <p class="lede">
+      OpenLakeForge is the open-source lakehouse for small data teams. Ingestion, validation, Iceberg storage, SQL,
+      orchestration, governance and dashboards come assembled, wired and deployed, on your laptop, AWS or Azure.
+    </p>
+    <div class="install">
+      <pre class="terminal"><code>{installCommands.map(({ command, comment }) => (
+        <span class="line"><span class="prompt">$ </span>{command}{comment && <span class="comment">   # {comment}</span>}</span>
+      ))}</code></pre>
+      <button class="copy" type="button" data-copy={clipboard}>[ Copy ]</button>
+    </div>
+    <div class="actions">
+      <a class="btn btn-primary" href={quickstartHref}>Quick start <span aria-hidden="true">→</span></a>
+      <a class="btn btn-secondary" href={repositoryUrl}>Star on GitHub <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>(".hero .copy")) {
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy ?? "");
+        button.textContent = "[ Copied ]";
+        setTimeout(() => (button.textContent = "[ Copy ]"), 1600);
+      } catch {}
+    });
+  }
+</script>
+
+<style>
+  .hero { position: relative; overflow: hidden; }
+  .contours {
+    position: absolute;
+    left: 50%;
+    top: -16rem;
+    width: 112rem;
+    max-width: none;
+    transform: translateX(-50%);
+    color: var(--olf-highlight);
+    opacity: var(--contour-opacity);
+    pointer-events: none;
+  }
+  .content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--olf-space-6);
+    padding-top: var(--olf-space-24);
+    padding-bottom: var(--olf-space-8);
+    text-align: center;
+  }
+  .lede { max-width: 45rem; }
+  .install { position: relative; width: min(100%, 42rem); }
+  .install .terminal { padding-right: var(--olf-space-24); }
+  .line { display: block; white-space: pre; }
+  .copy {
+    position: absolute;
+    top: var(--olf-space-4);
+    right: var(--olf-space-4);
+    border: 0;
+    background: none;
+    font: 500 0.6875rem / 1 var(--olf-font-mono);
+    letter-spacing: var(--olf-tracking-label);
+    text-transform: uppercase;
+    color: var(--abyss-400);
+    cursor: pointer;
+  }
+  .copy:hover { color: var(--abyss-100); }
+  .actions { justify-content: center; }
+  @media (max-width: 48rem) {
+    .content { padding-top: var(--olf-space-16); }
+    .comment { display: none; }
+    /* The copy button gets its own row above the commands. */
+    .install .terminal { padding-top: var(--olf-space-10); padding-right: var(--olf-space-6); }
+    .copy { top: var(--olf-space-3); }
+  }
+</style>

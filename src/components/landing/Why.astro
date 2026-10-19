@@ -1,0 +1,19 @@
+---
+import { reasons } from "../../data/landing";
+---
+
+<section class="wrap section" id="why">
+  <div class="section-head">
+    <p class="eyebrow">Why OpenLakeForge</p>
+    <h2 class="title">Less platform work, same modern lakehouse.</h2>
+  </div>
+  <div class="grid grid-3">
+    {reasons.map(({ eyebrow, title, text }) => (
+      <article class="card">
+        <p class="eyebrow">{eyebrow}</p>
+        <h3>{title}</h3>
+        <p>{text}</p>
+      </article>
+    ))}
+  </div>
+</section>
