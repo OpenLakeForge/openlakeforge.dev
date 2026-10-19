@@ -1,0 +1,17 @@
+// Cloudflare hosting, as code: a Worker that only serves the static build.
+// The release workflow (.github/workflows/release.yml) runs `wrangler deploy`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "openlakeforge-website",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  // openlakeforge.dev is a zone in the same Cloudflare account; wrangler
+  // creates the DNS record and certificate for the custom domain.
+  "routes": [{ "pattern": "openlakeforge.dev", "custom_domain": true }],
+  // No *.workers.dev copy of the site: one public URL only.
+  "workers_dev": false
+}

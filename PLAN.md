@@ -32,17 +32,18 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
 | Sidebar order | A **`docs/navigation.yaml` manifest in openlakeforge** | The docs owner controls structure without frontmatter in every file (GitHub renders frontmatter as a table, which hurts the in-repo reading experience) |
 | Page titles and descriptions | Taken from the page's **H1** and **first paragraph** by the sync | No frontmatter needed in the source repo |
 | Styling | Starlight's CSS variables mapped onto the **Deep Water tokens** (`tokens.css`) | One visual language across portal and site |
-| Hosting | **GitHub Pages**, built by GitHub Actions | Free, same place as the code; switch to Cloudflare Pages later if preview deploys per PR are wanted |
+| Hosting | **Cloudflare** (Workers static assets, configured in `wrangler.jsonc`), deployed by GitHub Actions on release tags | The domain is on Cloudflare; hosting, custom domain and certificate are all code in this repo |
 | Versioned docs | **Latest release only** at launch; add `starlight-versions` once there are users on older releases | Keeps v1 simple |
 
 ### Decided (2026-10-19)
 
-- **Domain**: none bought yet; `openlakeforge.com` is the likely choice.
-  This repository is named `openlakeforge.github.io`, so GitHub Pages serves
-  it at the root, **https://openlakeforge.github.io/**, with no Astro `base`
-  path to handle. The URL lives in one place (`site` in `astro.config.mjs`,
-  from `SITE_URL`), so moving to the domain later is a `CNAME` file plus one
-  variable.
+- **Domain**: **openlakeforge.dev**, bought on Cloudflare (2026-10-19). The
+  site is served there by Cloudflare (see Hosting); `site` in
+  `astro.config.mjs` defaults to it. GitHub Pages is no longer used; the
+  repository keeps its `openlakeforge.github.io` name (renaming it is
+  optional, GitHub redirects old URLs).
+- **Releases**: the site is released by pushing a tag `vX.Y.Z` that matches
+  `package.json`; only a release deploys to production.
 - **Docs ref**: always the **latest released tag**, never `main`. The docs
   restructure (Phase 4) lands in milestone **v0.5-alpha**, so the first
   release whose docs follow the new structure is `v0.5.0-alpha.1`.
@@ -88,7 +89,7 @@ openlakeforge.github.io/
 │       └── starlight.css       Starlight variables → Deep Water tokens
 └── .github/workflows/
     ├── ci.yml                  sync, build, link check on every PR
-    └── deploy.yml              build + deploy to Pages on main, on a schedule, and on dispatch
+    └── release.yml             on a vX.Y.Z tag: build + deploy to Cloudflare (openlakeforge.dev)
 ```
 
 ---
@@ -161,6 +162,20 @@ Details:
 **Done when** the page matches Figma at 1440 px and 375 px in both themes,
 Lighthouse ≥ 95 for performance, accessibility, best practices and SEO, and the
 install command comes from the synced README.
+
+**Status: built.** `src/pages/index.astro` renders the eleven sections from
+`src/components/landing/`, with the copy in `src/data/landing.ts`. It was
+checked at 1440 px (dark and light) and 375 px (dark). The theme toggle shares
+Starlight's stored preference. Still open:
+
+- **Charts and logos are copies** in `src/assets/charts/` and
+  `src/assets/logos/`, taken from openlakeforge `main` @ `dfc76b7`: they were
+  added after `v0.4.0-alpha.1`, so no release has them yet. Once a release
+  ships them, Phase 3 can source them from the synced tag.
+- **Install commands are in `landing.ts`**, not yet read from the synced
+  README (needs Phase 3).
+- **Lighthouse** has not been run yet.
+- Links to `/docs/...` and `/changelog/` 404 until Phase 3.
 
 ## Phase 3: Docs sync pipeline
 
@@ -286,16 +301,25 @@ website builds against the new tag with zero broken links.
 
 ## Phase 5: Build, deploy, automation
 
-- **`ci.yml`** (website PRs): `npm ci` → sync at `docs.lock` → `astro build`
-  (link validation included) → upload the build as an artifact.
-- **`deploy.yml`**: on push to `main`, on `repository_dispatch: docs-released`,
-  and nightly: build and deploy to GitHub Pages
-  (`actions/upload-pages-artifact` + `actions/deploy-pages`, pinned by SHA like
-  openlakeforge's workflows).
+- **`ci.yml`** (done): on PRs and `main`: `npm ci` → `astro build` →
+  `wrangler deploy --dry-run` (validates the Cloudflare config). Adds the docs
+  sync and link validation with Phase 3.
+- **`release.yml`** (done): on a `vX.Y.Z` tag matching `package.json`, or by
+  hand: build with `SITE_URL=https://openlakeforge.dev` and `wrangler deploy`
+  through `cloudflare/wrangler-action` (pinned by SHA), in the `production`
+  environment.
+  - **One-time setup** (repository settings): create the `production`
+    environment with the secrets `CLOUDFLARE_API_TOKEN` (permissions:
+    *Workers Scripts: Edit* on the account; *Workers Routes: Edit* and
+    *DNS: Edit* on the `openlakeforge.dev` zone) and
+    `CLOUDFLARE_ACCOUNT_ID`.
 - **Release hook in openlakeforge**: the existing `release.yml` (on `v*` tags)
   gets a final job that sends `repository_dispatch` to openlakeforge.github.io
-  with the tag. A small workflow there opens a PR bumping `docs.lock`, so a
-  docs update is reviewed and the site never changes without a commit.
+  with the tag. A small workflow there opens a PR bumping `docs.lock`; merging
+  it and tagging a website release deploys the new docs, so the site never
+  changes without a commit.
+- **PR previews** (optional, later): `wrangler versions upload` on each PR
+  gives a preview URL without touching production.
 - **Docs preview on openlakeforge PRs** (optional, later): a job that builds
   the site with `OLF_DOCS_REF=<pr head sha>` and uploads it as an artifact, so
   doc changes are checked as rendered pages before merge.

@@ -4,9 +4,9 @@ import sitemap from "@astrojs/sitemap";
 import { deepWaterTheme } from "./src/lib/code-theme.ts";
 import { repositoryUrl } from "./src/lib/nav.ts";
 
-// The public URL lives here only: switching to a custom domain later is a
-// CNAME file plus SITE_URL (PLAN.md, "Decided").
-const site = process.env.SITE_URL ?? "https://openlakeforge.github.io";
+// The public URL lives here only (canonical links, sitemap). Served by
+// Cloudflare from wrangler.jsonc; SITE_URL overrides it for previews.
+const site = process.env.SITE_URL ?? "https://openlakeforge.dev";
 
 export default defineConfig({
   site,
