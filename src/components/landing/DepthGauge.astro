@@ -1,0 +1,409 @@
+---
+/**
+ * The page's depth gauge, after the scroll ruler on getartcraft.com/apps:
+ * a strip on the right edge with a ruler in metres that slides under a fixed
+ * reading line as the page scrolls. Each section sits ten metres below the
+ * previous one (00 m Surface … 80 m Get started), so the reading is both a
+ * progress bar and a map. A rolling readout at the top shows the depth;
+ * hovering the ruler shows the depth under the cursor, and a click dives there.
+ *
+ * Below 80rem there is no room beside the page: a "Sections" button at the
+ * bottom opens the same list instead.
+ */
+import { sections } from "../../data/landing";
+
+const metresPerSection = 10;
+const maxDepth = (sections.length - 1) * metresPerSection;
+const ticks = Array.from({ length: maxDepth + 1 }, (_, m) => m);
+const digits = Array.from({ length: 10 }, (_, d) => d);
+---
+
+<aside class="gauge" aria-label="Page sections" data-gauge data-max-depth={maxDepth} data-step={metresPerSection}>
+  <div class="readout" aria-hidden="true">
+    <span class="caption">Depth</span>
+    <span class="value">
+      <span class="roll" data-roll="tens">{digits.map((d) => <span>{d}</span>)}</span>
+      <span class="roll" data-roll="units">{digits.map((d) => <span>{d}</span>)}</span>
+      <span class="unit">m</span>
+    </span>
+  </div>
+
+  <div class="window" data-window>
+    <div class="ruler" data-ruler>
+      {ticks.map((m) => (
+        <span
+          class:list={["tick", { mid: m % 5 === 0, major: m % metresPerSection === 0 }]}
+          style={`--m: ${m}`}
+          aria-hidden="true"
+        />
+      ))}
+      <ol>
+        {sections.map(({ id, label }, i) => (
+          <li style={`--m: ${i * metresPerSection}`}>
+            <a href={`#${id}`} data-section={id}>
+              <span class="mark">{String(i * metresPerSection).padStart(2, "0")}</span>
+              <span class="name">{label}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+    <span class="reading" aria-hidden="true"></span>
+    <span class="probe" data-probe aria-hidden="true"><span data-probe-depth>0 m</span></span>
+  </div>
+</aside>
+
+<details class="jump" data-jump>
+  <summary><span class="depth" data-jump-depth>00 m</span> Sections</summary>
+  <ol>
+    {sections.map(({ id, label, depth }) => (
+      <li><a href={`#${id}`} data-section={id}><span class="depth">{depth}</span>{label}</a></li>
+    ))}
+  </ol>
+</details>
+
+<script>
+  const gauge = document.querySelector<HTMLElement>("[data-gauge]")!;
+  const win = gauge.querySelector<HTMLElement>("[data-window]")!;
+  const probe = gauge.querySelector<HTMLElement>("[data-probe]")!;
+  const probeDepth = gauge.querySelector<HTMLElement>("[data-probe-depth]")!;
+  const rolls = { tens: gauge.querySelector<HTMLElement>('[data-roll="tens"]')!, units: gauge.querySelector<HTMLElement>('[data-roll="units"]')! };
+  const jump = document.querySelector<HTMLDetailsElement>("[data-jump]");
+  const jumpDepth = document.querySelector<HTMLElement>("[data-jump-depth]");
+  const links = [...document.querySelectorAll<HTMLAnchorElement>("a[data-section]")];
+  const ids = [...new Set(links.map((a) => a.dataset.section!))];
+  const targets = ids.map((id) => document.getElementById(id)!);
+  const step = Number(gauge.dataset.step);
+  const maxDepth = Number(gauge.dataset.maxDepth);
+  const headerOffset = 80; // matches section[id] { scroll-margin-top: 5rem }
+
+  // Anchor points between scroll position and depth: section i is at
+  // i × step metres once its top reaches the header. Recomputed when the
+  // layout changes (fonts, images, resizes).
+  let anchors: { y: number; d: number }[] = [];
+  const measure = () => {
+    const maxScroll = document.documentElement.scrollHeight - innerHeight;
+    anchors = targets.map((t, i) => ({
+      y: i === 0 ? 0 : Math.min(maxScroll, Math.max(0, t.getBoundingClientRect().top + scrollY - headerOffset)),
+      d: i * step,
+    }));
+    // The last sections may not be able to reach the header: the bottom of
+    // the page is always the deepest point.
+    anchors[anchors.length - 1].y = maxScroll;
+    for (let i = anchors.length - 2; i >= 0; i--) anchors[i].y = Math.min(anchors[i].y, anchors[i + 1].y);
+  };
+  const interpolate = (x: number, from: "y" | "d", to: "y" | "d") => {
+    if (x <= anchors[0][from]) return anchors[0][to];
+    for (let i = 1; i < anchors.length; i++) {
+      const a = anchors[i - 1], b = anchors[i];
+      if (x <= b[from]) return b[from] === a[from] ? b[to] : a[to] + ((x - a[from]) / (b[from] - a[from])) * (b[to] - a[to]);
+    }
+    return anchors[anchors.length - 1][to];
+  };
+  const depthAt = (y: number) => interpolate(y, "y", "d");
+  const scrollFor = (d: number) => interpolate(d, "d", "y");
+
+  let current = -1;
+  const update = () => {
+    const depth = depthAt(scrollY);
+    gauge.style.setProperty("--depth", depth.toFixed(2));
+    const shown = Math.min(maxDepth, Math.round(depth));
+    rolls.tens.style.setProperty("--digit", String(Math.floor(shown / 10)));
+    rolls.units.style.setProperty("--digit", String(shown % 10));
+
+    const index = Math.min(ids.length - 1, Math.floor(depth / step + 0.001));
+    if (index === current) return;
+    current = index;
+    for (const a of links) {
+      if (a.dataset.section === ids[index]) a.setAttribute("aria-current", "location");
+      else a.removeAttribute("aria-current");
+    }
+    // The bottom button stays out of the way (and out of the tab order) on the hero.
+    if (jump) {
+      jump.toggleAttribute("data-surfaced", index === 0);
+      jump.inert = index === 0;
+      if (index === 0) jump.open = false;
+    }
+    if (jumpDepth) jumpDepth.textContent = `${String(index * step).padStart(2, "0")} m`;
+  };
+
+  // Hover the ruler to read the depth under the cursor; click to dive there.
+  const pxPerMetre = () => parseFloat(getComputedStyle(gauge).getPropertyValue("--px-per-m"));
+  const depthUnder = (clientY: number) => {
+    const r = win.getBoundingClientRect();
+    const d = depthAt(scrollY) + (clientY - (r.top + r.height / 2)) / pxPerMetre();
+    return Math.min(maxDepth, Math.max(0, d));
+  };
+  win.addEventListener("pointermove", (e) => {
+    const r = win.getBoundingClientRect();
+    probe.style.setProperty("--y", `${e.clientY - r.top}px`);
+    probeDepth.textContent = `${Math.round(depthUnder(e.clientY))} m`;
+  });
+  win.addEventListener("click", (e) => {
+    if ((e.target as HTMLElement).closest("a")) return; // section links scroll by themselves
+    scrollTo({ top: scrollFor(depthUnder(e.clientY)) });
+  });
+
+  jump?.addEventListener("click", (e) => {
+    if ((e.target as HTMLElement).closest("a")) jump.open = false;
+  });
+
+  measure();
+  update();
+  addEventListener("scroll", update, { passive: true });
+  addEventListener("resize", () => { measure(); update(); });
+  new ResizeObserver(() => { measure(); update(); }).observe(document.body);
+</script>
+
+<style>
+  /* ── The strip (wide screens) ── */
+  .gauge {
+    --depth: 0;
+    --px-per-m: 22;
+    --unit: calc(var(--px-per-m) * 1px);
+    --width: 4rem;
+    position: fixed;
+    inset: 0 0 0 auto;
+    /* Above the sticky header (5): the strip runs the full height, readout
+       included. It only covers the header's empty right margin. */
+    z-index: 6;
+    width: var(--width);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--olf-border-subtle);
+    background: color-mix(in srgb, var(--olf-bg-base) 70%, transparent);
+    backdrop-filter: blur(6px);
+  }
+
+  /* Rolling readout: each digit is a column of 0–9 shifted by --digit lines. */
+  .readout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--olf-space-1);
+    padding: var(--olf-space-5) 0 var(--olf-space-3);
+    border-bottom: 1px solid var(--olf-border-subtle);
+  }
+  .caption {
+    font: 500 0.5625rem / 1 var(--olf-font-mono);
+    letter-spacing: var(--olf-tracking-label);
+    text-transform: uppercase;
+    color: var(--olf-text-muted);
+  }
+  .value {
+    display: flex;
+    align-items: baseline;
+    font: 500 1rem / 1.25 var(--olf-font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--olf-highlight);
+  }
+  .roll {
+    --digit: 0;
+    display: flex;
+    flex-direction: column;
+    height: 1.25em;
+    overflow: hidden;
+  }
+  .roll span {
+    translate: 0 calc(var(--digit) * -100%);
+    transition: translate var(--olf-duration) var(--olf-ease);
+  }
+  .unit {
+    margin-left: 0.15em;
+    font-size: 0.6875rem;
+    color: var(--olf-text-muted);
+  }
+
+  /* The ruler slides so that the current depth sits on the reading line. */
+  .window {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  .ruler {
+    position: absolute;
+    inset: 0;
+    translate: 0 calc(50% - var(--depth) * var(--unit));
+    height: 100%;
+  }
+  .tick {
+    position: absolute;
+    right: 0;
+    top: calc(var(--m) * var(--unit));
+    width: 0.375rem;
+    height: 1px;
+    background: var(--olf-border-default);
+  }
+  .tick.mid { width: 0.75rem; background: var(--olf-border-strong); }
+  .tick.major { width: 1.25rem; background: var(--olf-text-muted); }
+
+  .ruler ol { margin: 0; padding: 0; list-style: none; }
+  .ruler li {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(var(--m) * var(--unit));
+  }
+  /* The depth sits just above its major tick and the name runs below it, so
+     the reading line never crosses the text. */
+  .ruler a {
+    position: absolute;
+    left: var(--olf-space-2);
+    top: -1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--olf-text-muted);
+    text-decoration: none;
+  }
+  .mark {
+    font: 500 0.5625rem / 0.8rem var(--olf-font-mono);
+    letter-spacing: 0.04em;
+  }
+  /* Section names run down the ruler from their major tick. */
+  .name {
+    writing-mode: vertical-rl;
+    max-height: calc(var(--unit) * 8.5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 500 0.625rem / 1 var(--olf-font-mono);
+    letter-spacing: var(--olf-tracking-label);
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .ruler a:hover,
+  .ruler a:focus-visible {
+    color: var(--olf-text-primary);
+  }
+  .ruler a:hover .name,
+  .ruler a:focus-visible .name { opacity: 1; }
+  .ruler a[aria-current] { color: var(--olf-highlight); }
+  .ruler a[aria-current] .name { opacity: 1; }
+
+  /* The fixed reading line, with the water above it. */
+  .reading {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    margin-top: -1px;
+    background: var(--olf-highlight);
+    box-shadow: 0 0 12px var(--olf-highlight);
+    pointer-events: none;
+  }
+  .window::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 50%;
+    background: linear-gradient(transparent, var(--olf-tint-highlight));
+    pointer-events: none;
+  }
+
+  /* The probe follows the cursor and reads the depth under it. */
+  .probe {
+    --y: 0px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--y);
+    height: 1px;
+    background: var(--olf-text-primary);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--olf-duration-fast);
+  }
+  /* Inside the strip (the window clips anything outside it), above the line. */
+  .probe span {
+    position: absolute;
+    right: var(--olf-space-1);
+    bottom: 0.3rem;
+    padding: 0.15rem var(--olf-space-2);
+    border-radius: var(--olf-radius-sm);
+    background: var(--olf-bg-raised);
+    box-shadow: 0 0 0 1px var(--olf-border-default);
+    font: 500 0.6875rem / 1 var(--olf-font-mono);
+    white-space: nowrap;
+    color: var(--olf-text-primary);
+  }
+  .window:hover .probe { opacity: 1; }
+
+  /* ── "Sections" button (narrow screens) ── */
+  .jump {
+    position: fixed;
+    bottom: var(--olf-space-4);
+    left: 50%;
+    z-index: 4;
+    translate: -50% 0;
+    display: none;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease);
+  }
+  /* Hidden on the hero; `visibility` (after the fade) and `inert` keep it out
+     of keyboard reach. */
+  .jump[data-surfaced] {
+    opacity: 0;
+    translate: -50% 0.5rem;
+    visibility: hidden;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease),
+      visibility 0s linear var(--olf-duration);
+  }
+  .jump summary {
+    display: flex;
+    align-items: center;
+    gap: var(--olf-space-2);
+    padding: var(--olf-space-2) var(--olf-space-4);
+    border: 1px solid var(--olf-border-default);
+    border-radius: var(--olf-radius-full);
+    background: color-mix(in srgb, var(--olf-bg-raised) 92%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--olf-shadow-raised);
+    font: 500 var(--olf-text-small) / 1.4 var(--olf-font-body);
+    color: var(--olf-text-primary);
+    list-style: none;
+    cursor: pointer;
+  }
+  .jump summary::-webkit-details-marker { display: none; }
+  .jump .depth { font: 500 0.6875rem / 1 var(--olf-font-mono); font-variant-numeric: tabular-nums; }
+  .jump summary .depth { color: var(--olf-highlight); }
+  .jump ol {
+    position: absolute;
+    bottom: calc(100% + var(--olf-space-2));
+    left: 50%;
+    translate: -50% 0;
+    /* Never taller than the room above the button; scrolls on short screens. */
+    max-height: calc(100dvh - 5.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    min-width: 15rem;
+    margin: 0;
+    padding: var(--olf-space-2);
+    list-style: none;
+    border: 1px solid var(--olf-border-default);
+    border-radius: var(--olf-radius-lg);
+    background: var(--olf-bg-raised);
+    box-shadow: var(--olf-shadow-raised);
+  }
+  .jump ol a {
+    display: flex;
+    align-items: baseline;
+    gap: var(--olf-space-3);
+    padding: var(--olf-space-2) var(--olf-space-3);
+    border-radius: var(--olf-radius-md);
+    font-size: var(--olf-text-small);
+    color: var(--olf-text-secondary);
+    text-decoration: none;
+  }
+  .jump ol a .depth { width: 2.5rem; color: var(--olf-text-muted); }
+  .jump ol a[aria-current] { background: var(--olf-bg-accent-subtle); color: var(--olf-link); }
+
+  /* The strip covers the page's right padding: it needs the full 80rem page
+     (from 80rem wide). Below that, the button. */
+  @media (max-width: 80rem) {
+    .gauge { display: none; }
+    .jump { display: block; }
+  }
+  /* Reduced motion is handled page-wide in styles/landing.css. */
+</style>
