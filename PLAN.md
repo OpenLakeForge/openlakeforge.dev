@@ -61,7 +61,8 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
 ```text
 /                         presentation page (custom Astro page)
 /docs/                    docs home: "Choose your path" (from docs/README.md)
-/docs/get-started/...     introduction, quickstart, first data product, concepts
+/docs/get-started/...     introduction, quickstart, concepts
+/docs/tutorial/...        "Discover OpenLakeForge": one capability per lesson, 01–10
 /docs/guides/...          how-to guides
 /docs/reference/...       CLI, openlakeforge.yaml, lakehouse.yaml, source.yaml, catalogs
 /docs/architecture/...    overview, diagrams, provider contracts, identity…
@@ -245,34 +246,148 @@ working links and theme-aware charts. The released `v0.4.0-alpha.1` docs must
 sync through `navigation.fallback.yaml` with no change to the openlakeforge
 repo, so the site does not wait for the restructure.
 
-## Phase 4: Docs restructure (in openlakeforge, separate PRs)
+## Phase 4: Docs restructure (in openlakeforge, milestone v0.5-alpha)
 
-The goal is a structure a newcomer can follow: **Get started → Guides →
-Reference → Architecture → Decisions**, one kind of page per section (the
-[Diátaxis](https://diataxis.fr) split that Dagster and Supabase both use).
+The goal is docs a newcomer can follow in order. A quickstart gets the stack
+running in minutes. A tutorial then shows **one capability per lesson**, on the
+same project, from the demo data products to GitHub sign-in, PROD and the cloud.
+The sections are **Get started → Tutorial → Guides → Reference → Architecture
+→ Decisions**, and each section holds one kind of page, following the
+[Diátaxis](https://diataxis.fr) split.
 
-### Target tree and move map
+### What comparable docs do, and what we take
+
+| Docs | Pattern | What we take |
+| --- | --- | --- |
+| [Dagster](https://dagster.io/docs) | Getting started (overview, quickstart, installation, concepts) → **Tutorial** (projects, assets, resources, dependencies, checks, automation) → Build / Automate / Operate / Test | A separate tutorial section of short lessons, each adding one capability to the same project |
+| [Stackable](https://docs.stackable.tech/home/stable/) | Quickstart → Concepts → **Demos** → Tutorials → Guides; per-component pages give an overview, a getting-started guide and feature guides | A docs page per bundled component that says what it does in OpenLakeForge and where its UI is |
+| [Airbyte](https://docs.airbyte.com/platform/) | One quickstart (install the CLI, run, sign in, ~minutes) ending on *Move data* and *Deploy*; self-managed deployment and security grouped apart | The quickstart ends on two "next" links, *learn the platform* (Tutorial) and *deploy it for real* (Guides); it says how long the first deploy takes and gives the resource needs |
+| [dbt](https://docs.getdbt.com/docs/introduction) | Docs / Guides / Reference as separate top-level areas; quickstarts listed under Guides | Reference pages stay apart from guides and are never the entry point |
+| [Supabase self-hosting](https://supabase.com/docs/guides/self-hosting) | Self-hosting page states how it differs from local dev and **what the operator is responsible for** | An *Is it a good fit?* and *What you operate* section in the Introduction |
+| [Ilum](https://ilum.cloud/docs/overview/) | Overview → Get started → Features → User guides → **Production** → Security → Upgrade | A distinct *Operate* group (status, diagnostics, upgrade, teardown, recovery) in Guides |
+
+### Target structure
+
+```text
+Get started
+  introduction.md          what it is, who it is for, good fit / not yet, what you operate
+  quickstart.md            ~10 min: install, olf init, olf deploy, portal, run a product, query Trino
+  concepts.md              medallion layers, data products, descriptors, presets, stages,
+                           project revisions, provider contracts, roles, one paragraph each
+
+Tutorial: Discover OpenLakeForge (one project, one capability per lesson)
+  01-tour-the-platform.md        portal → Dagster asset graph → materialize a demo product → query Gold in Trino
+  02-ingest-a-source.md          olf source new, dlt loader, Bronze CSV in object storage
+  03-validate-into-silver.md     Floe contract, rejections, Silver Iceberg table
+  04-model-gold-with-dbt.md      olf product new, dbt-trino model, docs and tests
+  05-orchestrate-and-schedule.md Dagster job per product, schedule, rerun
+  06-publish-a-dashboard.md      preset: full, Superset report as code (olf report)
+  07-govern-and-trace-lineage.md OpenMetadata domains, data products, lineage
+  08-sign-in-with-github.md      spec.identity, olf github connect, teams → roles, portal sign-in, a denied service
+  09-add-prod-and-promote.md     stages, olf project build / deploy, the CI actions, PROD approval
+  10-deploy-to-the-cloud.md      the same project on AWS (and Azure, preview)
+
+Guides (task-oriented)
+  Install and access   install options (uv, pip, toolchain modes), HTTP vs HTTPS, name resolution,
+                       port-forward fallback
+  Identity             connect GitHub, map teams to roles, add / change / remove a member,
+                       bring your own OIDC issuer, rotate identity secrets, break-glass access
+  Data products        add a source, add a resource, add a domain, add a Gold model,
+                       export / import a dashboard, ownership identities
+  Stages and CI        promote DEV → PROD (today's reference/ci-cd.md), protect the prod environment
+  Cloud                prepare a cloud account, deploy to AWS, deploy to Azure
+  Operate              status and service URLs, diagnostics, troubleshooting, upgrade, tear down
+
+Reference
+  cli.md (tools/olf/README.md), deployment-profile.md (new: openlakeforge.yaml field by field,
+  including spec.identity and spec.access), lakehouse-descriptor.md, source-descriptor.md,
+  roles-and-permissions.md (new: from release/identity-roles.yaml), services-and-routes.md (new),
+  components.md (new: one entry per bundled component, version, UI, docs link),
+  component-catalog.md, compatibility-matrix.md, glossary.md (new)
+
+Architecture
+  overview, diagrams, provider contracts, deployment lifecycle, project revisions,
+  floe validation, local stack contracts, identity/ (callers, credentials, service permissions,
+  sessions and recovery, identity classes), network policy and RBAC, AWS, Azure
+
+Decisions
+  docs/adr/* (published as is)
+```
+
+### Lesson contract
+
+Every tutorial lesson has the same shape, so a reader can stop and resume:
+
+- **You will**: one sentence and a time estimate.
+- **Start from**: the project state the lesson expects (the end of the
+  previous lesson, or a fresh `olf init` for lessons 1 and 8 onward).
+- Numbered steps; every command block runs as written.
+- **Check it worked**: one command (`olf status`, `olf e2e run …`, or a Trino
+  query) and what it prints.
+- **What you learned** and **Next**, linking the Guide and Reference pages that
+  go deeper.
+
+Lesson 8 is the v0.5 exit demo (scene 1) written as a procedure. The admin adds
+an analyst to the mapped GitHub team. The analyst signs in on the portal,
+reaches Superset, and is denied Dagster.
+
+### v0.5-alpha changes the docs must carry
+
+| Change | Issue(s) | Where it lands |
+| --- | --- | --- |
+| Quickstart by default: no ingress, TLS or identity unless asked; plain HTTP on `*.olf.localhost`; authentication off locally | [#399](https://github.com/OpenLakeForge/openlakeforge/issues/399), [#403](https://github.com/OpenLakeForge/openlakeforge/issues/403), [#418](https://github.com/OpenLakeForge/openlakeforge/issues/418) | Quickstart, Tutorial 01, Guides → Install and access |
+| Portal at the base domain lists every service | [#330](https://github.com/OpenLakeForge/openlakeforge/issues/330) | Quickstart ends on the portal; Tutorial 01 starts there |
+| GitHub is the forge: roles map to GitHub teams through Dex; `olf users`, invitations, SMTP and Keycloak removed | ADR 0018, [#383](https://github.com/OpenLakeForge/openlakeforge/issues/383), [#384](https://github.com/OpenLakeForge/openlakeforge/issues/384) | Tutorial 08, Guides → Identity, Reference → deployment profile |
+| `olf github connect` and the inline connect during `olf deploy`; install link and end-of-deploy summary | [#420](https://github.com/OpenLakeForge/openlakeforge/issues/420), [#428](https://github.com/OpenLakeForge/openlakeforge/issues/428), [#433](https://github.com/OpenLakeForge/openlakeforge/issues/433) | Tutorial 08, Guides → Connect GitHub |
+| Readable page when a GitHub sign-in is refused, linking to the docs | [#438](https://github.com/OpenLakeForge/openlakeforge/issues/438) | Guides → Connect GitHub, *Troubleshooting* anchor. **That URL is a contract once the page links to it.** |
+| Canonical roles and per-service permissions; Superset / OpenMetadata SSO; Dagster / Trino protection | [#175](https://github.com/OpenLakeForge/openlakeforge/issues/175), [#25](https://github.com/OpenLakeForge/openlakeforge/issues/25), [#26](https://github.com/OpenLakeForge/openlakeforge/issues/26) | Reference → roles and permissions, Guides → Identity |
+| User lifecycle, session bound, break-glass | [#177](https://github.com/OpenLakeForge/openlakeforge/issues/177) | Guides → add / change / remove a member, break-glass access |
+| Human vs workload identity classes | [#178](https://github.com/OpenLakeForge/openlakeforge/issues/178) | Architecture → identity |
+| Namespace RBAC and default-deny NetworkPolicy (Dex egress to GitHub) | [#46](https://github.com/OpenLakeForge/openlakeforge/issues/46) | Architecture → network policy, Guides → troubleshooting |
+
+Stale text to remove outside ADR History footers: Keycloak, `olf users`,
+invitations and SMTP still appear in `architecture/identity-*.md` and
+`setup/identity-secret-rotation.md`. The [#177](https://github.com/OpenLakeForge/openlakeforge/issues/177) and [#182](https://github.com/OpenLakeForge/openlakeforge/issues/182) issue bodies still
+describe `olf users` and should be updated when their docs land.
+
+### Move map
 
 | Today | Target | Notes |
 | --- | --- | --- |
-| *(README "What / Why / Fit")* | `docs/get-started/introduction.md` | **New**: what OpenLakeForge is, who it is for, good fit / not yet |
-| `docs/setup/local.md` (3.6k words) | `docs/get-started/quickstart.md` + `docs/guides/local-access-and-identity.md` + `docs/guides/local-troubleshooting.md` | Split: the 10-minute path stays in Quickstart |
-| `docs/getting-started/first-data-product.md` | `docs/get-started/first-data-product.md` | Tutorial |
-| *(new)* | `docs/get-started/concepts.md` | Medallion layers, data products, stages, project revisions, presets, provider contracts, one paragraph each, linking out |
-| *(parts of first-data-product)* | `docs/guides/add-a-bronze-source.md`, `write-silver-contracts.md`, `model-gold-with-dbt.md`, `publish-dashboards.md` | How-tos extracted from the tutorial |
-| `docs/reference/ci-cd.md` | `docs/guides/promote-dev-to-prod.md` | It is a guide |
-| `docs/setup/github-oauth-app.md` | `docs/guides/sign-in-with-github.md` | |
-| `docs/setup/identity-secret-rotation.md` | `docs/guides/rotate-identity-secrets.md` | |
-| `docs/setup/aws.md`, `azure.md`, `cloud-poc-setup.md` | `docs/guides/deploy-to-aws.md`, `deploy-to-azure.md`, `prepare-a-cloud-account.md` | |
+| *(README "What / Why / Fit")* | `docs/get-started/introduction.md` | **New** |
+| `docs/setup/local.md` (880 lines) | `get-started/quickstart.md` + `guides/install-options.md`, `guides/local-access.md`, `guides/troubleshooting.md`, `guides/tear-down.md` | The quickstart keeps only the shortest path |
+| *(new)* | `docs/get-started/concepts.md` | |
+| `docs/getting-started/first-data-product.md` (1,156 lines) | `tutorial/02`–`05` + `guides/add-a-source.md`, `add-a-gold-model.md`, `ownership-identities.md` | The tutorial keeps the narrative; the "adding more…" sections become guides |
+| `docs/reference/ci-cd.md` | `docs/guides/promote-dev-to-prod.md` + `tutorial/09` | It is a guide |
+| `docs/setup/github-oauth-app.md` | `docs/guides/identity/connect-github.md` + `tutorial/08` | |
+| `docs/setup/identity-secret-rotation.md` | `docs/guides/identity/rotate-secrets.md` | |
+| `docs/setup/aws.md`, `azure.md`, `cloud-poc-setup.md` | `docs/guides/cloud/deploy-to-aws.md`, `deploy-to-azure.md`, `prepare-a-cloud-account.md` + `tutorial/10` | |
 | `tools/olf/README.md` | stays; published as `reference/cli` via the manifest | |
-| *(schema only)* | `docs/reference/deployment-profile.md` | **New**: `openlakeforge.yaml` field by field |
-| `docs/reference/domain-descriptor.md` | `docs/reference/lakehouse-descriptor.md` + `docs/reference/source-descriptor.md` | Split per file |
+| *(schema only)* | `docs/reference/deployment-profile.md` | **New** |
+| `docs/reference/domain-descriptor.md` | `reference/lakehouse-descriptor.md` + `reference/source-descriptor.md` | Split per file |
+| *(release/identity-roles.yaml)* | `docs/reference/roles-and-permissions.md` | **New** |
 | `docs/release/component-catalog.md`, `compatibility-matrix.md` | `docs/reference/` | |
-| `docs/architecture/*` | stays; `diagrams/README.md` → `architecture/diagrams.md`; identity pages grouped under `architecture/identity/` | |
+| `docs/architecture/identity-*.md` | `docs/architecture/identity/` | Plus the identity-classes page ([#178](https://github.com/OpenLakeForge/openlakeforge/issues/178)) |
+| `docs/architecture/diagrams/README.md` | `docs/architecture/diagrams.md` | |
 | `docs/adr/*` | stays (published as *Decisions*) | |
 | `docs/release/releasing.md`, `docs/technical-debt.md`, `docs/testing/*` | stay, **not published** (`exclude:` in the manifest) | Maintainer material |
 
-### Writing conventions (added to AGENTS.md)
+### Pull requests (one v0.5-alpha issue each)
+
+| PR | Issue | Scope | Depends on |
+| --- | --- | --- | --- |
+| PR0 | [#439](https://github.com/OpenLakeForge/openlakeforge/issues/439) | `docs/navigation.yaml` manifest; an `olf check` that every relative link in `docs/` and the README resolves, and that every `docs/` file is listed or excluded | none |
+| PR1 | [#440](https://github.com/OpenLakeForge/openlakeforge/issues/440) | Get started: introduction, quickstart (v0.5 defaults, ends on the portal), concepts; the README quickstart shrinks to the install block plus a link | PR0 |
+| PR2 | [#441](https://github.com/OpenLakeForge/openlakeforge/issues/441) | Tutorial lessons 01–07, 09, 10, split from `first-data-product.md` and `local.md` | PR1 |
+| PR3 | [#442](https://github.com/OpenLakeForge/openlakeforge/issues/442) | Identity: Tutorial 08, Guides → Identity, Reference → roles and permissions | PR1; [#384](https://github.com/OpenLakeForge/openlakeforge/issues/384), [#25](https://github.com/OpenLakeForge/openlakeforge/issues/25), [#26](https://github.com/OpenLakeForge/openlakeforge/issues/26), [#177](https://github.com/OpenLakeForge/openlakeforge/issues/177), [#433](https://github.com/OpenLakeForge/openlakeforge/issues/433), [#438](https://github.com/OpenLakeForge/openlakeforge/issues/438) |
+| PR4 | [#443](https://github.com/OpenLakeForge/openlakeforge/issues/443) | Remaining guides and the reference (deployment profile, descriptor split, CLI, services and routes, components, glossary) | PR2 |
+| PR5 | [#444](https://github.com/OpenLakeForge/openlakeforge/issues/444) | Architecture regroup (`identity/`, diagrams, network policy), identity classes ([#178](https://github.com/OpenLakeForge/openlakeforge/issues/178)), and the stale-identity sweep | PR3 |
+
+PR3 is written last among the content PRs because it documents behaviour still
+landing in v0.5. Its lesson 08 is checked by running the exit demo on a fresh
+kind deployment.
+
+### Writing conventions (added to AGENTS.md in PR0)
 
 - One `# ` title per page; the first paragraph says what the page is for in one
   or two sentences (it becomes the search snippet).
@@ -281,6 +396,7 @@ Reference → Architecture → Decisions**, one kind of page per section (the
 - Use GitHub alerts (`> [!NOTE]`, `> [!TIP]`, `> [!WARNING]`) for callouts.
 - No emoji in headings; tables for comparisons, numbered lists for procedures.
 - Every command block is copy-pasteable and runs as written.
+- Tutorial lessons follow the lesson contract above.
 
 ### Moving files safely
 
@@ -289,20 +405,20 @@ Doc paths are referenced outside `docs/` in about 30 files: `olf`'s
 `scaffold/_templates.py`, `initialization.py`, the e2e modules, the release
 workflow, Terraform comments, `README.md` and `AGENTS.md`. So:
 
-1. **One PR per section** (Get started, Guides, Reference, Architecture).
-   Each PR moves its files with `git mv`, updates every reference
+1. Each PR moves its files with `git mv`, updates every reference
    (`git grep` for the old path must return nothing), updates
    `_structure.py` and `navigation.yaml`, and passes the four gates.
-2. Add a check to `olf check` that every relative link in `docs/` and the
-   README resolves, so the restructure cannot leave dead links in the repo
-   either.
+2. The PR0 link check keeps the restructure from leaving dead links in the
+   repo.
 3. Old site URLs don't exist yet, so the website needs no redirects before
    launch. After launch, a move adds a redirect in `astro.config.mjs`
-   (`redirects:`).
+   (`redirects:`). Pages linked from product error screens ([#438](https://github.com/OpenLakeForge/openlakeforge/issues/438)) keep their
+   URL or get a redirect.
 
-**Done when** the manifest lists every published page under the five
-sections, no reference to an old path remains in openlakeforge, and the
-website builds against the new tag with zero broken links.
+**Done when** the manifest lists every published page under the six
+sections, no reference to an old path remains in openlakeforge, a reader can
+go from Quickstart through Tutorial 10 without leaving the docs, and the
+website builds against the `v0.5.0-alpha.1` tag with zero broken links.
 
 ## Phase 5: Build, deploy, automation
 
@@ -360,9 +476,8 @@ Phase 1 ─┬─> Phase 2 (landing) ─────────────┐
   fallback manifest, then switch to the restructured docs when
   `v0.5.0-alpha.1` is tagged (a `docs.lock` bump).
 - Launch = Phases 1, 2, 3, 5. Phase 4 ships with v0.5-alpha.
-- Add the restructure to the v0.5-alpha milestone as one issue per section
-  (Get started, Guides, Reference, Architecture), each with its move map
-  rows from Phase 4.
+- The restructure is filed in v0.5-alpha as one issue per pull request,
+  [#439](https://github.com/OpenLakeForge/openlakeforge/issues/439)–[#444](https://github.com/OpenLakeForge/openlakeforge/issues/444) in openlakeforge (see the table in Phase 4).
 
 ## Risks
 
