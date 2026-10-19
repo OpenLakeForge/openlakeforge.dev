@@ -33,7 +33,7 @@ which is connected to this repository (no token lives in GitHub).
 | Branch | What Cloudflare does |
 | --- | --- |
 | `main` | `npm run build` then `npx wrangler deploy` → https://openlakeforge.dev |
-| any other branch | `npm run build` then `npx wrangler versions upload` → a preview URL on the PR |
+| any other branch | `npm run build` then `npx wrangler preview` → a Preview per branch, linked on the PR |
 
 `main` is protected: changes land only through pull requests, the
 [CI](.github/workflows/ci.yml) build must pass, and the code owner

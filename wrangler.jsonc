@@ -1,8 +1,8 @@
 // Cloudflare hosting, as code: a Worker that only serves the static build.
 // Deployed by Cloudflare Workers Builds, connected to this repository:
-//   build command                  npm run build
-//   deploy command (main)          npx wrangler deploy
-//   deploy command (other branches) npx wrangler versions upload   (preview URLs)
+//   build command                     npm run build
+//   deploy command (main)             npx wrangler deploy
+//   deploy command (other branches)   npx wrangler preview   (one Preview per branch)
 // The Worker's name in the Cloudflare dashboard must equal "name" below.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
@@ -18,6 +18,8 @@
   "routes": [{ "pattern": "openlakeforge.dev", "custom_domain": true }],
   // No *.workers.dev copy of the production site: one public URL only.
   "workers_dev": false,
-  // Preview URLs for non-production branches (versions upload).
-  "preview_urls": true
+  "preview_urls": true,
+  // Required by `wrangler preview` (branch builds). Empty: previews inherit
+  // the assets and compatibility settings above.
+  "previews": {}
 }

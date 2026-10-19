@@ -311,9 +311,10 @@ website builds against the new tag with zero broken links.
   sync and link validation with Phase 3.
 - **Deploy** (done, outside GitHub Actions): Cloudflare Workers Builds is
   connected to the repository. Build `npm run build`; deploy on `main`
-  `npx wrangler deploy`; deploy on other branches `npx wrangler versions
-  upload` (preview URLs). The Worker's name in the dashboard must match
-  `name` in `wrangler.jsonc`.
+  `npx wrangler deploy`; deploy on other branches `npx wrangler preview`
+  (Workers Previews, open beta; needs the `previews` block in
+  `wrangler.jsonc`). The Worker's name in the dashboard must match `name` in
+  `wrangler.jsonc`.
 - **Release hook in openlakeforge**: the existing `release.yml` (on `v*` tags)
   gets a final job that sends `repository_dispatch` to openlakeforge.dev
   with the tag. A small workflow there opens a PR bumping `docs.lock`; merging
