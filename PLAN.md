@@ -35,11 +35,23 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
 | Hosting | **GitHub Pages**, built by GitHub Actions | Free, same place as the code; switch to Cloudflare Pages later if preview deploys per PR are wanted |
 | Versioned docs | **Latest release only** at launch; add `starlight-versions` once there are users on older releases | Keeps v1 simple |
 
-### To confirm before Phase 1
+### Decided (2026-10-19)
 
-- [ ] **Domain**: `openlakeforge.dev`, `openlakeforge.io`, or `openlakeforge.github.io/openlakeforge-website` for now.
-- [ ] **Docs ref**: track the latest `v*` release tag (recommended) or `main`.
-- [ ] **Analytics**: none (recommended at launch) or a privacy-friendly one (Plausible / Umami).
+- **Domain**: none bought yet; `openlakeforge.com` is the likely choice.
+  Launch on GitHub Pages and keep the URL in one place (`site` in
+  `astro.config.mjs`, from `SITE_URL`), so switching to the domain later is a
+  `CNAME` file plus one variable.
+  - A project-repo Pages URL lives under a sub-path
+    (`openlakeforge.github.io/openlakeforge-website/`), which means setting
+    Astro's `base` and testing every link with it. To avoid that, either
+    rename this repo to `openlakeforge.github.io` (served at the root), or
+    buy the domain before launch.
+- **Docs ref**: always the **latest released tag**, never `main`. The docs
+  restructure (Phase 4) lands in milestone **v0.5-alpha**, so the first
+  release whose docs follow the new structure is `v0.5.0-alpha.1`.
+- **Analytics**: **none at launch**. If page-level readership becomes useful,
+  add a cookie-free tool (Umami self-hosted, or Plausible): no consent banner,
+  no data sent to an ad network.
 
 ## 3. Site map
 
@@ -62,6 +74,7 @@ openlakeforge-website/
 ├── astro.config.mjs            Starlight config, sidebar built from the manifest
 ├── package.json
 ├── docs.lock                   the openlakeforge ref the docs are synced from (e.g. v0.4.0-alpha.1)
+├── navigation.fallback.yaml    sidebar for tags released before docs/navigation.yaml existed
 ├── scripts/
 │   └── sync-docs.ts            clone + transform the docs (Phase 3)
 ├── src/
@@ -149,7 +162,11 @@ install command comes from the synced README.
 - A shallow, sparse clone of openlakeforge at that ref:
   `docs/`, `README.md`, `CHANGELOG.md`, `tools/olf/README.md`,
   `docs/architecture/diagrams/src/overview/logos.json`.
-- `docs/navigation.yaml` from that ref (the manifest, see below).
+- `docs/navigation.yaml` from that ref (the manifest, see below). Tags
+  released before the manifest existed (`v0.4.0-alpha.1` and earlier) don't
+  have one: for those, the sync uses `navigation.fallback.yaml` in this repo,
+  which maps the paths as they are in that tag. Once a release ships its own
+  manifest, the fallback is deleted.
 
 **Manifest (`docs/navigation.yaml` in openlakeforge)**
 
@@ -192,10 +209,9 @@ install command comes from the synced README.
   or dropped by accident).
 
 **Done when** every page listed in the manifest renders with the right title,
-working links and theme-aware charts. Today's docs must sync without any change
-to the openlakeforge repo apart from adding `docs/navigation.yaml` (the
-manifest maps the current paths), so the site does not wait for the
-restructure.
+working links and theme-aware charts. The released `v0.4.0-alpha.1` docs must
+sync through `navigation.fallback.yaml` with no change to the openlakeforge
+repo, so the site does not wait for the restructure.
 
 ## Phase 4: Docs restructure (in openlakeforge, separate PRs)
 
@@ -302,10 +318,14 @@ Phase 1 ─┬─> Phase 2 (landing) ─────────────┐
 ```
 
 - Phases 2 and 3 can run in parallel after Phase 1.
-- Phase 4 happens in openlakeforge and can start any time. The site does not
-  wait for it: the manifest maps today's paths first, then the paths it moves.
-- Launch = Phases 1, 2, 3, 5. Phase 4 can be completed after launch, one
-  section at a time.
+- Phase 4 happens in openlakeforge, within milestone **v0.5-alpha**. The site
+  does not wait for it: it can launch on the `v0.4.0-alpha.1` docs through the
+  fallback manifest, then switch to the restructured docs when
+  `v0.5.0-alpha.1` is tagged (a `docs.lock` bump).
+- Launch = Phases 1, 2, 3, 5. Phase 4 ships with v0.5-alpha.
+- Add the restructure to the v0.5-alpha milestone as one issue per section
+  (Get started, Guides, Reference, Architecture), each with its move map
+  rows from Phase 4.
 
 ## Risks
 
