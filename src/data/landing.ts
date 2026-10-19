@@ -4,6 +4,22 @@
  * a claim here must be true of the released platform.
  */
 
+/**
+ * The page's sections as a sounding line: each one ten metres deeper. The ids
+ * are the <section> ids in src/components/landing/; keep them in step.
+ */
+export const sections = [
+  { id: "surface", label: "Surface" },
+  { id: "how-it-works", label: "How it works" },
+  { id: "why", label: "Why OpenLakeForge" },
+  { id: "everything-as-code", label: "Everything as code" },
+  { id: "stages", label: "From commit to PROD" },
+  { id: "your-project", label: "Your project" },
+  { id: "deploy-anywhere", label: "Deploy anywhere" },
+  { id: "good-fit", label: "Is it a good fit?" },
+  { id: "get-started", label: "Get started" },
+].map((s, i) => ({ ...s, depth: `${String(i * 10).padStart(2, "0")} m` }));
+
 /** The latest release, shown in the announcement bar. */
 export const release = { version: "0.4.0-alpha.1", note: "Dex-only identity and one-command GitHub App setup." };
 

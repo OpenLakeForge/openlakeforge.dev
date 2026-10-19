@@ -9,7 +9,7 @@ const rings = [[0.6, 8, 0.9], [1.1, 4, 0.8], [1.7, -2, 0.7], [2.4, -7, 0.6], [3.
 const clipboard = installCommands.map((c) => c.command).join("\n");
 ---
 
-<section class="hero">
+<section class="hero" id="surface">
   <svg class="contours" viewBox="0 0 1200 800" aria-hidden="true">
     <g fill="none" stroke="currentColor" transform="translate(600 380)">
       {rings.map(([s, r, o]) => <path d={outline} transform={`scale(${s}) rotate(${r})`} opacity={o} stroke-width={(1.2 / s).toFixed(3)} />)}
