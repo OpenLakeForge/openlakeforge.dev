@@ -1,0 +1,269 @@
+---
+/**
+ * The page's depth gauge: a sounding line on the left with one tick per
+ * section. The "water" fills the line down to the current section; only that
+ * section is named until the rail is hovered or focused. On narrow screens
+ * the same list opens from a "Sections" button at the bottom.
+ */
+import { sections } from "../../data/landing";
+---
+
+<nav class="rail" aria-label="Page sections" data-rail>
+  <span class="line" aria-hidden="true"><span class="water"></span></span>
+  <ol>
+    {sections.map(({ id, label, depth }) => (
+      <li>
+        <a href={`#${id}`} data-section={id}>
+          <span class="tick" aria-hidden="true"></span>
+          <span class="depth">{depth}</span>
+          <span class="label">{label}</span>
+        </a>
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<details class="jump" data-jump>
+  <summary><span class="depth" data-jump-depth>00 m</span> Sections</summary>
+  <ol>
+    {sections.map(({ id, label, depth }) => (
+      <li><a href={`#${id}`} data-section={id}><span class="depth">{depth}</span>{label}</a></li>
+    ))}
+  </ol>
+</details>
+
+<script>
+  const rail = document.querySelector<HTMLElement>("[data-rail]");
+  const jump = document.querySelector<HTMLDetailsElement>("[data-jump]");
+  const jumpDepth = document.querySelector<HTMLElement>("[data-jump-depth]");
+  const links = [...document.querySelectorAll<HTMLAnchorElement>("a[data-section]")];
+  const ids = [...new Set(links.map((a) => a.dataset.section!))];
+  const targets = ids.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => el !== null);
+
+  let current = -1;
+  const setActive = (index: number) => {
+    if (index === current) return;
+    current = index;
+    const id = ids[index];
+    for (const a of links) {
+      if (a.dataset.section === id) a.setAttribute("aria-current", "location");
+      else a.removeAttribute("aria-current");
+    }
+    rail?.style.setProperty("--level", String(index / (ids.length - 1)));
+    // At the surface both controls are hidden, and `inert` takes their links
+    // out of the tab order and the accessibility tree, not just out of sight.
+    const surfaced = index === 0;
+    for (const el of [rail, jump]) {
+      el?.toggleAttribute("data-surfaced", surfaced);
+      if (el) el.inert = surfaced;
+    }
+    if (surfaced && jump) jump.open = false;
+    const depth = rail?.querySelector(`a[data-section="${id}"] .depth`)?.textContent;
+    if (jumpDepth && depth) jumpDepth.textContent = depth;
+  };
+
+  // Current = the last section whose top has passed the middle of the
+  // viewport, or the last one once the page is scrolled to the bottom (on a
+  // tall screen, the short final section never reaches the middle).
+  const update = () => {
+    const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+    let index = 0;
+    if (atBottom) index = targets.length - 1;
+    else targets.forEach((t, i) => { if (t.getBoundingClientRect().top <= innerHeight / 2) index = i; });
+    setActive(index);
+  };
+  // Browsers already deliver scroll events at most once per frame, and the
+  // work is nine rect reads, so no extra throttling is needed.
+  addEventListener("scroll", update, { passive: true });
+  addEventListener("resize", update);
+  update();
+
+  // The mobile list closes once a section is picked.
+  jump?.addEventListener("click", (e) => {
+    if ((e.target as HTMLElement).closest("a")) jump.open = false;
+  });
+</script>
+
+<style>
+  /* ── Side rail (wide screens) ── */
+  .rail {
+    --level: 0;
+    --step: 2.5rem;
+    position: fixed;
+    left: var(--olf-space-3);
+    top: 50%;
+    z-index: 4;
+    padding: var(--olf-space-3) var(--olf-space-4) var(--olf-space-3) var(--olf-space-3);
+    border-radius: var(--olf-radius-lg);
+    translate: 0 -50%;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease),
+      background var(--olf-duration-fast), box-shadow var(--olf-duration-fast);
+  }
+  /* Hovered or focused, the rail becomes an opaque panel listing every section. */
+  .rail:hover,
+  .rail:focus-within {
+    background: var(--olf-bg-raised);
+    box-shadow: 0 0 0 1px var(--olf-border-default), var(--olf-shadow-raised);
+  }
+  /* Hidden at the surface: the hero speaks for itself. `visibility` (delayed
+     until the fade ends) also keeps the hidden links out of keyboard reach. */
+  .rail[data-surfaced] {
+    opacity: 0;
+    translate: -0.5rem -50%;
+    visibility: hidden;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease),
+      visibility 0s linear var(--olf-duration);
+  }
+  .line {
+    position: absolute;
+    left: calc(var(--olf-space-3) + 0.3125rem);
+    top: calc(var(--olf-space-3) + 0.75rem);
+    bottom: calc(var(--olf-space-3) + 0.75rem);
+    width: 1px;
+    background: var(--olf-border-default);
+  }
+  .water {
+    position: absolute;
+    inset: 0 0 auto;
+    height: calc(var(--level) * 100%);
+    background: linear-gradient(var(--olf-highlight), var(--olf-accent));
+    transition: height var(--olf-duration) var(--olf-ease);
+  }
+  .rail ol {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--step) - 1.5rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .rail a {
+    display: flex;
+    align-items: center;
+    gap: var(--olf-space-3);
+    height: 1.5rem;
+    color: var(--olf-text-muted);
+    text-decoration: none;
+  }
+  .tick {
+    flex: none;
+    width: 0.6875rem;
+    height: 0.6875rem;
+    border: 1px solid var(--olf-border-strong);
+    border-radius: 50%;
+    background: var(--olf-bg-base);
+    transition: background var(--olf-duration), border-color var(--olf-duration), box-shadow var(--olf-duration);
+  }
+  .depth {
+    font: 500 0.6875rem / 1 var(--olf-font-mono);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Names stay folded away (no width) until the rail opens. */
+  .label {
+    display: none;
+    font-size: var(--olf-text-small);
+    white-space: nowrap;
+    color: var(--olf-text-secondary);
+  }
+  .rail:hover .label,
+  .rail:focus-within .label {
+    display: inline;
+  }
+  .rail a:hover,
+  .rail a:hover .label {
+    color: var(--olf-text-primary);
+  }
+  .rail a[aria-current] .depth,
+  .rail a[aria-current] .label {
+    color: var(--olf-link);
+  }
+  .rail a[aria-current] .tick {
+    border-color: var(--olf-highlight);
+    background: var(--olf-highlight);
+    box-shadow: 0 0 0 4px var(--olf-tint-highlight);
+  }
+  /* Wide screens have room beside the page: the current section stays named. */
+  @media (min-width: 105rem) {
+    .rail a[aria-current] .label {
+      display: inline;
+    }
+  }
+
+  /* ── "Sections" button (narrow screens) ── */
+  .jump {
+    position: fixed;
+    bottom: var(--olf-space-4);
+    left: 50%;
+    z-index: 4;
+    translate: -50% 0;
+    display: none;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease);
+  }
+  .jump[data-surfaced] {
+    opacity: 0;
+    translate: -50% 0.5rem;
+    visibility: hidden;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease),
+      visibility 0s linear var(--olf-duration);
+  }
+  .jump summary {
+    display: flex;
+    align-items: center;
+    gap: var(--olf-space-2);
+    padding: var(--olf-space-2) var(--olf-space-4);
+    border: 1px solid var(--olf-border-default);
+    border-radius: var(--olf-radius-full);
+    background: color-mix(in srgb, var(--olf-bg-raised) 92%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--olf-shadow-raised);
+    font: 500 var(--olf-text-small) / 1.4 var(--olf-font-body);
+    color: var(--olf-text-primary);
+    list-style: none;
+    cursor: pointer;
+  }
+  .jump summary::-webkit-details-marker { display: none; }
+  .jump summary .depth { color: var(--olf-highlight); }
+  .jump ol {
+    position: absolute;
+    bottom: calc(100% + var(--olf-space-2));
+    left: 50%;
+    translate: -50% 0;
+    /* Opens upward from a button 16px above the bottom: never taller than
+       the room above it (phones in landscape), scrolling instead. */
+    max-height: calc(100dvh - 5.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    min-width: 15rem;
+    margin: 0;
+    padding: var(--olf-space-2);
+    list-style: none;
+    border: 1px solid var(--olf-border-default);
+    border-radius: var(--olf-radius-lg);
+    background: var(--olf-bg-raised);
+    box-shadow: var(--olf-shadow-raised);
+  }
+  .jump ol a {
+    display: flex;
+    align-items: baseline;
+    gap: var(--olf-space-3);
+    padding: var(--olf-space-2) var(--olf-space-3);
+    border-radius: var(--olf-radius-md);
+    font-size: var(--olf-text-small);
+    color: var(--olf-text-secondary);
+    text-decoration: none;
+  }
+  .jump ol a .depth { width: 2.5rem; color: var(--olf-text-muted); }
+  .jump ol a[aria-current] { background: var(--olf-bg-accent-subtle); color: var(--olf-link); }
+
+  /* The rail sits in the margin left of the 80rem page and needs ~110px of it
+     (from 86rem wide); below that, the button. */
+  @media (max-width: 86rem) {
+    .rail { display: none; }
+    .jump { display: block; }
+  }
+  /* Reduced motion is handled once for the whole page in styles/landing.css:
+     no smooth scrolling, and every transition here (rail, water, ticks, the
+     Sections button) is disabled there with !important. */
+</style>

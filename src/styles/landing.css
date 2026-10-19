@@ -29,6 +29,9 @@ a { color: var(--olf-link); }
 
 .wrap { max-width: var(--olf-page-width); margin: 0 auto; padding: 0 var(--gutter); }
 
+/* Jumping to a section lands below the sticky header. */
+section[id] { scroll-margin-top: 5rem; }
+
 /* A section: eyebrow, title, lede, then content. */
 .section { padding-top: var(--olf-space-32); }
 .section-head { display: flex; flex-direction: column; gap: var(--olf-space-4); max-width: 52rem; margin-bottom: var(--olf-space-10); }
