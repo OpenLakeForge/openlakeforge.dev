@@ -40,29 +40,43 @@ import { sections } from "../../data/landing";
   const ids = [...new Set(links.map((a) => a.dataset.section!))];
   const targets = ids.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => el !== null);
 
-  const setActive = (id: string) => {
-    const index = ids.indexOf(id);
+  let current = -1;
+  const setActive = (index: number) => {
+    if (index === current) return;
+    current = index;
+    const id = ids[index];
     for (const a of links) {
       if (a.dataset.section === id) a.setAttribute("aria-current", "location");
       else a.removeAttribute("aria-current");
     }
     rail?.style.setProperty("--level", String(index / (ids.length - 1)));
-    rail?.toggleAttribute("data-surfaced", index === 0);
-    jump?.toggleAttribute("data-surfaced", index === 0);
-    if (index === 0 && jump) jump.open = false;
+    // At the surface both controls are hidden, and `inert` takes their links
+    // out of the tab order and the accessibility tree, not just out of sight.
+    const surfaced = index === 0;
+    for (const el of [rail, jump]) {
+      el?.toggleAttribute("data-surfaced", surfaced);
+      if (el) el.inert = surfaced;
+    }
+    if (surfaced && jump) jump.open = false;
     const depth = rail?.querySelector(`a[data-section="${id}"] .depth`)?.textContent;
     if (jumpDepth && depth) jumpDepth.textContent = depth;
   };
 
-  // A section is current while it crosses the middle band of the viewport.
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) if (entry.isIntersecting) setActive(entry.target.id);
-    },
-    { rootMargin: "-45% 0px -50% 0px" },
-  );
-  targets.forEach((t) => observer.observe(t));
-  setActive(ids[0]);
+  // Current = the last section whose top has passed the middle of the
+  // viewport, or the last one once the page is scrolled to the bottom (on a
+  // tall screen, the short final section never reaches the middle).
+  const update = () => {
+    const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+    let index = 0;
+    if (atBottom) index = targets.length - 1;
+    else targets.forEach((t, i) => { if (t.getBoundingClientRect().top <= innerHeight / 2) index = i; });
+    setActive(index);
+  };
+  // Browsers already deliver scroll events at most once per frame, and the
+  // work is nine rect reads, so no extra throttling is needed.
+  addEventListener("scroll", update, { passive: true });
+  addEventListener("resize", update);
+  update();
 
   // The mobile list closes once a section is picked.
   jump?.addEventListener("click", (e) => {
@@ -91,11 +105,14 @@ import { sections } from "../../data/landing";
     background: var(--olf-bg-raised);
     box-shadow: 0 0 0 1px var(--olf-border-default), var(--olf-shadow-raised);
   }
-  /* Hidden at the surface: the hero speaks for itself. */
+  /* Hidden at the surface: the hero speaks for itself. `visibility` (delayed
+     until the fade ends) also keeps the hidden links out of keyboard reach. */
   .rail[data-surfaced] {
     opacity: 0;
     translate: -0.5rem -50%;
-    pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease),
+      visibility 0s linear var(--olf-duration);
   }
   .line {
     position: absolute;
@@ -187,7 +204,9 @@ import { sections } from "../../data/landing";
   .jump[data-surfaced] {
     opacity: 0;
     translate: -50% 0.5rem;
-    pointer-events: none;
+    visibility: hidden;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease),
+      visibility 0s linear var(--olf-duration);
   }
   .jump summary {
     display: flex;
@@ -211,6 +230,11 @@ import { sections } from "../../data/landing";
     bottom: calc(100% + var(--olf-space-2));
     left: 50%;
     translate: -50% 0;
+    /* Opens upward from a button 16px above the bottom: never taller than
+       the room above it (phones in landscape), scrolling instead. */
+    max-height: calc(100dvh - 5.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     min-width: 15rem;
     margin: 0;
     padding: var(--olf-space-2);
