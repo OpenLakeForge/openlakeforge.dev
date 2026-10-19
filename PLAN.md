@@ -39,9 +39,10 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
 
 - **Domain**: **openlakeforge.dev**, bought on Cloudflare (2026-10-19). The
   site is served there by Cloudflare (see Hosting); `site` in
-  `astro.config.mjs` defaults to it. GitHub Pages is no longer used; the
-  repository keeps its `openlakeforge.github.io` name (renaming it is
-  optional, GitHub redirects old URLs).
+  `astro.config.mjs` defaults to it. The repository is named after the
+  domain, `OpenLakeForge/openlakeforge.dev` (formerly `openlakeforge-website`,
+  then `openlakeforge.github.io`; GitHub redirects the old URLs). GitHub
+  Pages is disabled.
 - **Releases**: `main` is the production branch. Merging a pull request into
   `main` deploys; every other branch gets a Cloudflare preview URL. `main` is
   protected by a ruleset: pull requests only, CI `build` must pass, code-owner
@@ -72,7 +73,7 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
 ## 4. Repository layout (target)
 
 ```text
-openlakeforge.github.io/
+openlakeforge.dev/
 ├── astro.config.mjs            Starlight config, sidebar built from the manifest
 ├── package.json
 ├── docs.lock                   the openlakeforge ref the docs are synced from (e.g. v0.4.0-alpha.1)
@@ -314,7 +315,7 @@ website builds against the new tag with zero broken links.
   upload` (preview URLs). The Worker's name in the dashboard must match
   `name` in `wrangler.jsonc`.
 - **Release hook in openlakeforge**: the existing `release.yml` (on `v*` tags)
-  gets a final job that sends `repository_dispatch` to openlakeforge.github.io
+  gets a final job that sends `repository_dispatch` to openlakeforge.dev
   with the tag. A small workflow there opens a PR bumping `docs.lock`; merging
   it deploys the new docs, so the site never changes without a reviewed
   commit. (That workflow needs only the default `GITHUB_TOKEN` here, plus a
