@@ -32,18 +32,23 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
 | Sidebar order | A **`docs/navigation.yaml` manifest in openlakeforge** | The docs owner controls structure without frontmatter in every file (GitHub renders frontmatter as a table, which hurts the in-repo reading experience) |
 | Page titles and descriptions | Taken from the page's **H1** and **first paragraph** by the sync | No frontmatter needed in the source repo |
 | Styling | Starlight's CSS variables mapped onto the **Deep Water tokens** (`tokens.css`) | One visual language across portal and site |
-| Hosting | **Cloudflare** (Workers static assets, configured in `wrangler.jsonc`), deployed by GitHub Actions on release tags | The domain is on Cloudflare; hosting, custom domain and certificate are all code in this repo |
+| Hosting | **Cloudflare** (Workers static assets, configured in `wrangler.jsonc`), built and deployed by **Cloudflare Workers Builds** connected to this repo | The domain is on Cloudflare; no API token to store or renew in GitHub; hosting, custom domain and certificate are code in this repo |
 | Versioned docs | **Latest release only** at launch; add `starlight-versions` once there are users on older releases | Keeps v1 simple |
 
 ### Decided (2026-10-19)
 
 - **Domain**: **openlakeforge.dev**, bought on Cloudflare (2026-10-19). The
   site is served there by Cloudflare (see Hosting); `site` in
-  `astro.config.mjs` defaults to it. GitHub Pages is no longer used; the
-  repository keeps its `openlakeforge.github.io` name (renaming it is
-  optional, GitHub redirects old URLs).
-- **Releases**: the site is released by pushing a tag `vX.Y.Z` that matches
-  `package.json`; only a release deploys to production.
+  `astro.config.mjs` defaults to it. The repository is named after the
+  domain, `OpenLakeForge/openlakeforge.dev` (formerly `openlakeforge-website`,
+  then `openlakeforge.github.io`; GitHub redirects the old URLs). GitHub
+  Pages is disabled.
+- **Releases**: `main` is the production branch. Merging a pull request into
+  `main` deploys; every other branch gets a Cloudflare preview URL. `main` is
+  protected by a ruleset: pull requests only, CI `build` must pass, code-owner
+  approval (`@malon64` in `.github/CODEOWNERS`), no force-push or deletion.
+  The repository admin may bypass the approval only when merging a pull
+  request, never by pushing directly.
 - **Docs ref**: always the **latest released tag**, never `main`. The docs
   restructure (Phase 4) lands in milestone **v0.5-alpha**, so the first
   release whose docs follow the new structure is `v0.5.0-alpha.1`.
@@ -68,7 +73,7 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
 ## 4. Repository layout (target)
 
 ```text
-openlakeforge.github.io/
+openlakeforge.dev/
 ├── astro.config.mjs            Starlight config, sidebar built from the manifest
 ├── package.json
 ├── docs.lock                   the openlakeforge ref the docs are synced from (e.g. v0.4.0-alpha.1)
@@ -89,7 +94,7 @@ openlakeforge.github.io/
 │       └── starlight.css       Starlight variables → Deep Water tokens
 └── .github/workflows/
     ├── ci.yml                  sync, build, link check on every PR
-    └── release.yml             on a vX.Y.Z tag: build + deploy to Cloudflare (openlakeforge.dev)
+    (deploys: Cloudflare Workers Builds, see wrangler.jsonc)
 ```
 
 ---
@@ -304,28 +309,23 @@ website builds against the new tag with zero broken links.
 - **`ci.yml`** (done): on PRs and `main`: `npm ci` → `astro build` →
   `wrangler deploy --dry-run` (validates the Cloudflare config). Adds the docs
   sync and link validation with Phase 3.
-- **`release.yml`** (done): on a `vX.Y.Z` tag matching `package.json`, or by
-  hand: build with `SITE_URL=https://openlakeforge.dev` and `wrangler deploy`
-  through `cloudflare/wrangler-action` (pinned by SHA), in the `production`
-  environment.
-  - **One-time setup** (repository settings): create the `production`
-    environment with the secrets `CLOUDFLARE_API_TOKEN` (permissions:
-    *Workers Scripts: Edit* on the account; *Workers Routes: Edit* and
-    *DNS: Edit* on the `openlakeforge.dev` zone) and
-    `CLOUDFLARE_ACCOUNT_ID`.
+- **Deploy** (done, outside GitHub Actions): Cloudflare Workers Builds is
+  connected to the repository. Build `npm run build`; deploy on `main`
+  `npx wrangler deploy`; deploy on other branches `npx wrangler versions
+  upload` (preview URLs). The Worker's name in the dashboard must match
+  `name` in `wrangler.jsonc`.
 - **Release hook in openlakeforge**: the existing `release.yml` (on `v*` tags)
-  gets a final job that sends `repository_dispatch` to openlakeforge.github.io
+  gets a final job that sends `repository_dispatch` to openlakeforge.dev
   with the tag. A small workflow there opens a PR bumping `docs.lock`; merging
-  it and tagging a website release deploys the new docs, so the site never
-  changes without a commit.
-- **PR previews** (optional, later): `wrangler versions upload` on each PR
-  gives a preview URL without touching production.
+  it deploys the new docs, so the site never changes without a reviewed
+  commit. (That workflow needs only the default `GITHUB_TOKEN` here, plus a
+  token in openlakeforge allowed to dispatch to this repo.)
 - **Docs preview on openlakeforge PRs** (optional, later): a job that builds
   the site with `OLF_DOCS_REF=<pr head sha>` and uploads it as an artifact, so
   doc changes are checked as rendered pages before merge.
 
 **Done when** tagging an openlakeforge release produces a website PR that
-updates `docs.lock`, and merging it deploys the site.
+updates `docs.lock`, and merging it into `main` deploys the site.
 
 ## Phase 6: Polish
 
