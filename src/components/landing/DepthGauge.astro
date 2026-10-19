@@ -7,7 +7,8 @@
  * progress bar and a map. A rolling readout at the top shows the depth;
  * hovering the ruler shows the depth under the cursor, and a click dives there.
  *
- * Below 80rem there is no room beside the page: a "Sections" button at the
+ * From 64rem wide the page reserves a column for the strip. Below that (tablets,
+ * phones) there is no room for it: a "Sections" button at the
  * bottom opens the same list instead.
  */
 import { sections } from "../../data/landing";
@@ -86,21 +87,18 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   const targets = ids.map((id) => document.getElementById(id)!);
   const step = Number(gauge.dataset.step);
   const maxDepth = Number(gauge.dataset.maxDepth);
-  const headerOffset = 80; // matches section[id] { scroll-margin-top: 5rem }
-
   // Anchor points between scroll position and depth: section i is at
-  // i × step metres once its top reaches the header. Recomputed when the
-  // layout changes (fonts, images, resizes).
+  // i × step metres where a jump to it lands, i.e. its top minus its
+  // scroll-margin-top (read from CSS, so a larger root font size moves both
+  // together). Sections that cannot scroll that far are clamped to the
+  // bottom of the page. Recomputed when the layout changes.
   let anchors: { y: number; d: number }[] = [];
   const measure = () => {
     const maxScroll = document.documentElement.scrollHeight - innerHeight;
     anchors = targets.map((t, i) => ({
-      y: i === 0 ? 0 : Math.min(maxScroll, Math.max(0, t.getBoundingClientRect().top + scrollY - headerOffset)),
+      y: i === 0 ? 0 : Math.min(maxScroll, Math.max(0, t.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(t).scrollMarginTop))),
       d: i * step,
     }));
-    // The last sections may not be able to reach the header: the bottom of
-    // the page is always the deepest point.
-    anchors[anchors.length - 1].y = maxScroll;
     for (let i = anchors.length - 2; i >= 0; i--) anchors[i].y = Math.min(anchors[i].y, anchors[i + 1].y);
     // On a tall screen several of them collapse onto the bottom. Spread each
     // run of equal positions evenly back to the previous anchor, so depth
@@ -369,6 +367,12 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     top: var(--olf-space-4);
     right: calc(100% + var(--olf-space-2));
   }
+  /* On a short window the panel scrolls rather than running off-screen. */
+  .keys ol {
+    max-height: calc(100dvh - 2 * var(--olf-space-4));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
   .keys ol,
   .jump ol {
     margin: 0;
@@ -446,9 +450,13 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     overscroll-behavior: contain;
   }
 
-  /* The strip covers the page's right padding: it needs the full 80rem page
-     (from 80rem wide). Below that, the button. */
-  @media (max-width: 80rem) {
+  /* From 64rem wide the strip has its own column: the page keeps 4rem
+     (the strip's width) free on the right, so the ruler never covers content.
+     Below that, the button. */
+  @media (min-width: 64.0625rem) {
+    :global(body) { padding-right: 4rem; }
+  }
+  @media (max-width: 64rem) {
     .gauge { display: none; }
     .jump { display: block; }
   }
