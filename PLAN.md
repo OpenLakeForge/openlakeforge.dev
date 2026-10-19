@@ -320,10 +320,13 @@ Every tutorial lesson has the same shape, so a reader can stop and resume:
 
 - **You will**: one sentence and a time estimate.
 - **Start from**: the project state the lesson expects (the end of the
-  previous lesson, or a fresh `olf init` for lessons 1 and 8 onward).
+  previous lesson). Lessons 1 and 8 are the only reset points: either can
+  start from a fresh `olf init`. Lessons 9 and 10 continue lesson 8's project.
 - Numbered steps; every command block runs as written.
 - **Check it worked**: one command (`olf status`, `olf e2e run …`, or a Trino
-  query) and what it prints.
+  query) and what it prints. When the outcome is a person's access in a
+  browser, as in lesson 8, the check is that sign-in and denial procedure,
+  with the response each identity sees.
 - **What you learned** and **Next**, linking the Guide and Reference pages that
   go deeper.
 
@@ -355,16 +358,16 @@ describe `olf users` and should be updated when their docs land.
 | Today | Target | Notes |
 | --- | --- | --- |
 | *(README "What / Why / Fit")* | `docs/get-started/introduction.md` | **New** |
-| `docs/setup/local.md` (880 lines) | `get-started/quickstart.md` + `guides/install-options.md`, `guides/local-access.md`, `guides/troubleshooting.md`, `guides/tear-down.md` | The quickstart keeps only the shortest path |
+| `docs/setup/local.md` (880 lines) | `docs/get-started/quickstart.md` + `docs/guides/install-options.md`, `docs/guides/local-access.md`, `docs/guides/troubleshooting.md`, `docs/guides/tear-down.md` | The quickstart keeps only the shortest path |
 | *(new)* | `docs/get-started/concepts.md` | |
-| `docs/getting-started/first-data-product.md` (1,156 lines) | `tutorial/02`–`05` + `guides/add-a-source.md`, `add-a-gold-model.md`, `ownership-identities.md` | The tutorial keeps the narrative; the "adding more…" sections become guides |
-| `docs/reference/ci-cd.md` | `docs/guides/promote-dev-to-prod.md` + `tutorial/09` | It is a guide |
-| `docs/setup/github-oauth-app.md` | `docs/guides/identity/connect-github.md` + `tutorial/08` | |
+| `docs/getting-started/first-data-product.md` (1,156 lines) | `docs/tutorial/02-…` to `docs/tutorial/05-…` + `docs/guides/add-a-source.md`, `docs/guides/add-a-gold-model.md`, `docs/guides/ownership-identities.md` | The tutorial keeps the narrative; the "adding more…" sections become guides |
+| `docs/reference/ci-cd.md` | `docs/guides/promote-dev-to-prod.md` + `docs/tutorial/09-add-prod-and-promote.md` | It is a guide |
+| `docs/setup/github-oauth-app.md` | `docs/guides/identity/connect-github.md` + `docs/tutorial/08-sign-in-with-github.md` | |
 | `docs/setup/identity-secret-rotation.md` | `docs/guides/identity/rotate-secrets.md` | |
-| `docs/setup/aws.md`, `azure.md`, `cloud-poc-setup.md` | `docs/guides/cloud/deploy-to-aws.md`, `deploy-to-azure.md`, `prepare-a-cloud-account.md` + `tutorial/10` | |
+| `docs/setup/aws.md`, `azure.md`, `cloud-poc-setup.md` | `docs/guides/cloud/deploy-to-aws.md`, `docs/guides/cloud/deploy-to-azure.md`, `docs/guides/cloud/prepare-a-cloud-account.md` + `docs/tutorial/10-deploy-to-the-cloud.md` | |
 | `tools/olf/README.md` | stays; published as `reference/cli` via the manifest | |
 | *(schema only)* | `docs/reference/deployment-profile.md` | **New** |
-| `docs/reference/domain-descriptor.md` | `reference/lakehouse-descriptor.md` + `reference/source-descriptor.md` | Split per file |
+| `docs/reference/domain-descriptor.md` | `docs/reference/lakehouse-descriptor.md` + `docs/reference/source-descriptor.md` | Split per file |
 | *(release/identity-roles.yaml)* | `docs/reference/roles-and-permissions.md` | **New** |
 | `docs/release/component-catalog.md`, `compatibility-matrix.md` | `docs/reference/` | |
 | `docs/architecture/identity-*.md` | `docs/architecture/identity/` | Plus the identity-classes page ([#178](https://github.com/OpenLakeForge/openlakeforge/issues/178)) |
@@ -377,9 +380,9 @@ describe `olf users` and should be updated when their docs land.
 | PR | Issue | Scope | Depends on |
 | --- | --- | --- | --- |
 | PR0 | [#439](https://github.com/OpenLakeForge/openlakeforge/issues/439) | `docs/navigation.yaml` manifest; an `olf check` that every relative link in `docs/` and the README resolves, and that every `docs/` file is listed or excluded | none |
-| PR1 | [#440](https://github.com/OpenLakeForge/openlakeforge/issues/440) | Get started: introduction, quickstart (v0.5 defaults, ends on the portal), concepts; the README quickstart shrinks to the install block plus a link | PR0 |
+| PR1 | [#440](https://github.com/OpenLakeForge/openlakeforge/issues/440) | Get started: introduction, quickstart (v0.5 defaults, ends on the portal), concepts; the README quickstart shrinks to the install block plus a link | PR0; [#330](https://github.com/OpenLakeForge/openlakeforge/issues/330), [#399](https://github.com/OpenLakeForge/openlakeforge/issues/399), [#403](https://github.com/OpenLakeForge/openlakeforge/issues/403), [#418](https://github.com/OpenLakeForge/openlakeforge/issues/418) |
 | PR2 | [#441](https://github.com/OpenLakeForge/openlakeforge/issues/441) | Tutorial lessons 01–07, 09, 10, split from `first-data-product.md` and `local.md` | PR1 |
-| PR3 | [#442](https://github.com/OpenLakeForge/openlakeforge/issues/442) | Identity: Tutorial 08, Guides → Identity, Reference → roles and permissions | PR1; [#384](https://github.com/OpenLakeForge/openlakeforge/issues/384), [#25](https://github.com/OpenLakeForge/openlakeforge/issues/25), [#26](https://github.com/OpenLakeForge/openlakeforge/issues/26), [#177](https://github.com/OpenLakeForge/openlakeforge/issues/177), [#433](https://github.com/OpenLakeForge/openlakeforge/issues/433), [#438](https://github.com/OpenLakeForge/openlakeforge/issues/438) |
+| PR3 | [#442](https://github.com/OpenLakeForge/openlakeforge/issues/442) | Identity: Tutorial 08, Guides → Identity, Reference → roles and permissions | PR1; [#384](https://github.com/OpenLakeForge/openlakeforge/issues/384), [#420](https://github.com/OpenLakeForge/openlakeforge/issues/420), [#428](https://github.com/OpenLakeForge/openlakeforge/issues/428), [#25](https://github.com/OpenLakeForge/openlakeforge/issues/25), [#26](https://github.com/OpenLakeForge/openlakeforge/issues/26), [#177](https://github.com/OpenLakeForge/openlakeforge/issues/177), [#433](https://github.com/OpenLakeForge/openlakeforge/issues/433), [#438](https://github.com/OpenLakeForge/openlakeforge/issues/438) |
 | PR4 | [#443](https://github.com/OpenLakeForge/openlakeforge/issues/443) | Remaining guides and the reference (deployment profile, descriptor split, CLI, services and routes, components, glossary) | PR2 |
 | PR5 | [#444](https://github.com/OpenLakeForge/openlakeforge/issues/444) | Architecture regroup (`identity/`, diagrams, network policy), identity classes ([#178](https://github.com/OpenLakeForge/openlakeforge/issues/178)), and the stale-identity sweep | PR3 |
 
