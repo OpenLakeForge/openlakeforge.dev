@@ -102,6 +102,17 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     // the page is always the deepest point.
     anchors[anchors.length - 1].y = maxScroll;
     for (let i = anchors.length - 2; i >= 0; i--) anchors[i].y = Math.min(anchors[i].y, anchors[i + 1].y);
+    // On a tall screen several of them collapse onto the bottom. Spread each
+    // run of equal positions evenly back to the previous anchor, so depth
+    // keeps rising continuously (and every depth can be dived to) instead of
+    // jumping across the run on the last pixel.
+    for (let s = 1; s < anchors.length; ) {
+      let e = s;
+      while (e + 1 < anchors.length && anchors[e + 1].y === anchors[s].y) e++;
+      const lo = anchors[s - 1].y, hi = anchors[e].y, n = e - s + 1;
+      if (n > 1 && hi > lo) for (let j = 0; j < n; j++) anchors[s + j].y = lo + ((hi - lo) * (j + 1)) / n;
+      s = e + 1;
+    }
   };
   const interpolate = (x: number, from: "y" | "d", to: "y" | "d") => {
     if (x <= anchors[0][from]) return anchors[0][to];
@@ -111,13 +122,9 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     }
     return anchors[anchors.length - 1][to];
   };
-  // On a tall screen several late sections are clamped to the same position
-  // (the bottom of the page). There, the forward search would stop at the
-  // first of them: the bottom is always the deepest section instead.
-  const depthAt = (y: number) => {
-    const last = anchors[anchors.length - 1];
-    return y >= last.y - 1 ? last.d : interpolate(y, "y", "d");
-  };
+  // The anchors are strictly increasing once measured, so both directions are
+  // plain interpolations; past the last anchor (the bottom), the deepest depth.
+  const depthAt = (y: number) => interpolate(y, "y", "d");
   const scrollFor = (d: number) => interpolate(d, "d", "y");
 
   let current = -1;
