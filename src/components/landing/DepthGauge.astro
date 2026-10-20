@@ -1,0 +1,685 @@
+---
+/**
+ * The page's depth gauge, after the scroll ruler on getartcraft.com/apps:
+ * a strip on the right edge with a ruler in metres that slides under a fixed
+ * reading line as the page scrolls. Each section sits ten metres below the
+ * previous one (00 m Surface … 80 m Get started), so the reading is both a
+ * progress bar and a map. A rolling readout at the top shows the depth;
+ * hovering the ruler shows the depth under the cursor, and a click dives there.
+ *
+ * From 64rem wide the page reserves a column for the strip. Below that (tablets,
+ * phones) there is no room for it: a "Sections" button at the
+ * bottom opens the same list instead.
+ */
+import { sections } from "../../data/landing";
+
+const metresPerSection = 10;
+const maxDepth = (sections.length - 1) * metresPerSection;
+const ticks = Array.from({ length: maxDepth + 1 }, (_, m) => m);
+const digits = Array.from({ length: 10 }, (_, d) => d);
+---
+
+<div class="gauge" data-gauge data-max-depth={maxDepth} data-step={metresPerSection} style={`--max: ${maxDepth}; --segments: ${sections.length - 1}`}>
+  <!-- The keyboard and screen-reader way in: the ruler below is a pointer-only
+       picture whose links slide out of view, so they are not tab stops. This
+       list is invisible until it receives focus, then opens beside the strip. -->
+  <nav class="keys" aria-label="Page sections">
+    <ol>
+      {sections.map(({ id, label, depth }) => (
+        <li><a href={`#${id}`} data-section={id}><span class="depth">{depth}</span>{label}</a></li>
+      ))}
+    </ol>
+  </nav>
+
+  <div class="readout" aria-hidden="true">
+    <span class="caption">Depth</span>
+    <span class="value">
+      <span class="roll" data-roll="tens">{digits.map((d) => <span>{d}</span>)}</span>
+      <span class="roll" data-roll="units">{digits.map((d) => <span>{d}</span>)}</span>
+      <span class="unit">m</span>
+    </span>
+  </div>
+
+  <div class="window" data-window>
+    <div class="ruler" data-ruler>
+      {ticks.map((m) => (
+        <span
+          class:list={["tick", { mid: m % 5 === 0, major: m % metresPerSection === 0 }]}
+          style={`--m: ${m}`}
+          aria-hidden="true"
+        />
+      ))}
+      <ol aria-hidden="true">
+        {sections.map(({ id, label }, i) => (
+          <li style={`--m: ${i * metresPerSection}`} class:list={{ up: i * metresPerSection > maxDepth / 2 }}>
+            <a href={`#${id}`} data-section={id} tabindex="-1">
+              <span class="mark">{String(i * metresPerSection).padStart(2, "0")}</span>
+              <span class="name">{label}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+    <span class="level" aria-hidden="true"><span class="grip"></span></span>
+    <span class="probe" data-probe aria-hidden="true"><span data-probe-depth>0 m</span></span>
+  </div>
+</div>
+
+<details class="jump" data-jump>
+  <summary><span class="depth" data-jump-depth>00 m</span> Sections</summary>
+  <ol>
+    {sections.map(({ id, label, depth }) => (
+      <li><a href={`#${id}`} data-section={id}><span class="depth">{depth}</span>{label}</a></li>
+    ))}
+  </ol>
+</details>
+
+<script>
+  const gauge = document.querySelector<HTMLElement>("[data-gauge]")!;
+  const win = gauge.querySelector<HTMLElement>("[data-window]")!;
+  const probe = gauge.querySelector<HTMLElement>("[data-probe]")!;
+  const probeDepth = gauge.querySelector<HTMLElement>("[data-probe-depth]")!;
+  const rolls = { tens: gauge.querySelector<HTMLElement>('[data-roll="tens"]')!, units: gauge.querySelector<HTMLElement>('[data-roll="units"]')! };
+  const jump = document.querySelector<HTMLDetailsElement>("[data-jump]");
+  const jumpDepth = document.querySelector<HTMLElement>("[data-jump-depth]");
+  const links = [...document.querySelectorAll<HTMLAnchorElement>("a[data-section]")];
+  const ids = [...new Set(links.map((a) => a.dataset.section!))];
+  const targets = ids.map((id) => document.getElementById(id)!);
+  const step = Number(gauge.dataset.step);
+  const maxDepth = Number(gauge.dataset.maxDepth);
+  // Anchor points between scroll position and depth: section i is at
+  // i × step metres where a jump to it lands, i.e. its top minus its
+  // scroll-margin-top (read from CSS, so a larger root font size moves both
+  // together). Sections that cannot scroll that far are clamped to the
+  // bottom of the page. Recomputed when the layout changes.
+  let anchors: { y: number; d: number }[] = [];
+  const measure = () => {
+    const maxScroll = document.documentElement.scrollHeight - innerHeight;
+    anchors = targets.map((t, i) => ({
+      y: i === 0 ? 0 : Math.min(maxScroll, Math.max(0, t.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(t).scrollMarginTop))),
+      d: i * step,
+    }));
+    for (let i = anchors.length - 2; i >= 0; i--) anchors[i].y = Math.min(anchors[i].y, anchors[i + 1].y);
+    // On a tall screen several of them collapse onto the bottom. Spread each
+    // run of equal positions evenly back to the previous anchor, so depth
+    // keeps rising continuously (and every depth can be dived to) instead of
+    // jumping across the run on the last pixel.
+    for (let s = 1; s < anchors.length; ) {
+      let e = s;
+      while (e + 1 < anchors.length && anchors[e + 1].y === anchors[s].y) e++;
+      const lo = anchors[s - 1].y, hi = anchors[e].y, n = e - s + 1;
+      if (n > 1 && hi > lo) for (let j = 0; j < n; j++) anchors[s + j].y = lo + ((hi - lo) * (j + 1)) / n;
+      s = e + 1;
+    }
+  };
+  const interpolate = (x: number, from: "y" | "d", to: "y" | "d") => {
+    if (x <= anchors[0][from]) return anchors[0][to];
+    for (let i = 1; i < anchors.length; i++) {
+      const a = anchors[i - 1], b = anchors[i];
+      if (x <= b[from]) return b[from] === a[from] ? b[to] : a[to] + ((x - a[from]) / (b[from] - a[from])) * (b[to] - a[to]);
+    }
+    return anchors[anchors.length - 1][to];
+  };
+  // The anchors are strictly increasing once measured, so both directions are
+  // plain interpolations; past the last anchor (the bottom), the deepest depth.
+  const depthAt = (y: number) => interpolate(y, "y", "d");
+  const scrollFor = (d: number) => interpolate(d, "d", "y");
+
+  // The readout lines up with the page header: same top (the header sits
+  // below the announcement bar until it sticks) and same height.
+  const header = document.querySelector<HTMLElement>("body > header");
+  const alignWithHeader = () => {
+    if (!header) return;
+    const r = header.getBoundingClientRect();
+    gauge.style.setProperty("--top", `${Math.max(0, r.top)}px`);
+    gauge.style.setProperty("--head", `${r.height}px`);
+  };
+
+  let current = -1;
+  const update = () => {
+    alignWithHeader();
+    const depth = depthAt(scrollY);
+    gauge.style.setProperty("--depth", depth.toFixed(2));
+    const shown = Math.min(maxDepth, Math.round(depth));
+    rolls.tens.style.setProperty("--digit", String(Math.floor(shown / 10)));
+    rolls.units.style.setProperty("--digit", String(shown % 10));
+
+    // 0.1 m of tolerance: pixel-snapped scrolling can stop a hair above a depth.
+    const index = Math.min(ids.length - 1, Math.floor((depth + 0.1) / step));
+    if (index === current) return;
+    current = index;
+    for (const a of links) {
+      if (a.dataset.section === ids[index]) a.setAttribute("aria-current", "location");
+      else a.removeAttribute("aria-current");
+    }
+    // The bottom button stays out of the way (and out of the tab order) on the hero.
+    if (jump) {
+      jump.toggleAttribute("data-surfaced", index === 0);
+      jump.inert = index === 0;
+      if (index === 0) jump.open = false;
+    }
+    if (jumpDepth) jumpDepth.textContent = `${String(index * step).padStart(2, "0")} m`;
+  };
+
+  // The ruler is the page's scrollbar: 0 m at its top, the deepest section at
+  // its bottom, inside --pad-top / --pad-bottom (rem). Hovering reads the depth
+  // under the cursor; pressing moves the level there, and dragging scrolls.
+  const remPx = (name: string) =>
+    parseFloat(getComputedStyle(win).getPropertyValue(name)) * parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const depthUnder = (clientY: number) => {
+    const r = win.getBoundingClientRect();
+    const top = remPx("--pad-top"), bottom = remPx("--pad-bottom");
+    const span = r.height - top - bottom;
+    if (span <= 0) return depthAt(scrollY); // no track to read: stay put
+    const d = ((clientY - r.top - top) / span) * maxDepth;
+    return Math.min(maxDepth, Math.max(0, d));
+  };
+  const scrollToDepth = (clientY: number) => scrollTo({ top: scrollFor(depthUnder(clientY)), behavior: "instant" });
+  let dragging = false;
+  win.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || (e.target as HTMLElement).closest("a")) return; // section links have their own handler
+    e.preventDefault();
+    dragging = true;
+    win.setPointerCapture(e.pointerId);
+    gauge.toggleAttribute("data-dragging", true);
+    scrollToDepth(e.clientY);
+  });
+  win.addEventListener("pointermove", (e) => {
+    const r = win.getBoundingClientRect();
+    probe.style.setProperty("--y", `${Math.min(r.height, Math.max(0, e.clientY - r.top))}px`);
+    probeDepth.textContent = `${Math.round(depthUnder(e.clientY))} m`;
+    if (dragging) scrollToDepth(e.clientY);
+  });
+  const stopDrag = (e: PointerEvent) => {
+    if (!dragging) return;
+    dragging = false;
+    if (win.hasPointerCapture(e.pointerId)) win.releasePointerCapture(e.pointerId);
+    gauge.toggleAttribute("data-dragging", false);
+  };
+  win.addEventListener("pointerup", stopDrag);
+  win.addEventListener("pointercancel", stopDrag);
+
+  jump?.addEventListener("click", (e) => {
+    if ((e.target as HTMLElement).closest("a")) jump.open = false;
+  });
+
+  // Every way to a section goes through the same mapping as the gauge.
+  // Usually that is exactly where the native jump lands (top minus
+  // scroll-margin); on a tall screen, where trailing sections are clamped and
+  // spread, the native jump would land at the bottom and read the last section.
+  // Spread positions are fractional and scrolling snaps to whole pixels: round
+  // up so a jump lands on (not just above) the section's depth.
+  const landingY = (index: number) => Math.ceil(scrollFor(index * step));
+  const goTo = (index: number, behavior: ScrollBehavior = "auto") => {
+    scrollTo({ top: landingY(index), behavior });
+    targets[index].setAttribute("tabindex", "-1");
+    targets[index].focus({ preventScroll: true });
+  };
+  // Index of the section named by the URL fragment, or -1. A malformed
+  // fragment such as "#%" makes decodeURIComponent throw: treat it as unknown.
+  const sectionInHash = () => {
+    try {
+      return ids.indexOf(decodeURIComponent(location.hash.slice(1)));
+    } catch {
+      return -1;
+    }
+  };
+  // Where the browser's own fragment jump puts a section.
+  const nativeY = (index: number) => Math.min(
+    document.documentElement.scrollHeight - innerHeight,
+    Math.max(0, targets[index].getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(targets[index]).scrollMarginTop)),
+  );
+
+  // History: each entry keeps the reader's scroll position in history.state
+  // (olfY), refreshed while scrolling and written just before a section jump.
+  // Back and Forward restore it explicitly: on a tall screen the browser would
+  // otherwise jump to the entry's fragment (the bottom) instead.
+  // history.state is written at most every 250 ms (browsers throttle it), so
+  // Back within that time would leave a stale olfY. Where the Navigation API
+  // exists, positions are also kept in memory per entry, on every scroll, and
+  // take precedence.
+  const entryKey = () =>
+    (window as { navigation?: { currentEntry?: { key: string } } }).navigation?.currentEntry?.key;
+  const positions = new Map<string, number>();
+  let restoring = false;
+  const track = () => {
+    const key = entryKey();
+    if (key) positions.set(key, scrollY);
+  };
+  const remember = () => {
+    history.replaceState({ ...(history.state ?? {}), olfY: scrollY }, "");
+  };
+  let rememberTimer = 0;
+  addEventListener("scroll", () => {
+    if (!restoring) track();
+    clearTimeout(rememberTimer);
+    rememberTimer = setTimeout(remember, 250);
+  }, { passive: true });
+
+  // Clicks on section links (ruler, keyboard list, mobile list): pushState
+  // keeps the #hash in history without a second, native jump.
+  for (const a of links) {
+    a.addEventListener("click", (e) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // new tab etc.
+      const index = ids.indexOf(a.dataset.section!);
+      e.preventDefault();
+      clearTimeout(rememberTimer);
+      remember();
+      goTo(index);
+      const url = `#${ids[index]}`;
+      if (location.hash !== url) history.pushState({ olfY: scrollY }, "", url);
+      else remember();
+      track();
+    });
+  }
+
+  // Back/Forward to an entry with a remembered position: restore it after the
+  // browser's own handling, and ignore the hashchange the traversal fires.
+  addEventListener("popstate", (e) => {
+    const key = entryKey();
+    const y = (key && positions.get(key)) ?? (e.state as { olfY?: unknown } | null)?.olfY;
+    if (typeof y !== "number") return;
+    restoring = true;
+    setTimeout(() => {
+      scrollTo({ top: y, behavior: "instant" });
+      restoring = false;
+      track();
+    }, 0);
+  });
+
+  // Any other fragment navigation (typed URL, another in-page link). Back and
+  // Forward to entries without a remembered position also fire hashchange,
+  // after the browser has restored that entry: leave those alone. They are
+  // recognised by the Navigation API where it exists, and otherwise because the
+  // page is not where a fresh fragment jump would have put the section.
+  let traversing = false;
+  (window as any).navigation?.addEventListener?.("navigate", (e: { navigationType: string }) => {
+    traversing = e.navigationType === "traverse";
+  });
+  addEventListener("hashchange", () => {
+    const wasTraversal = traversing;
+    traversing = false;
+    const index = sectionInHash();
+    if (restoring || index < 0 || wasTraversal || Math.abs(scrollY - nativeY(index)) > 2) return;
+    goTo(index);
+  });
+
+  // Track the page from the start, before handling the initial fragment.
+  addEventListener("scroll", update, { passive: true });
+  addEventListener("resize", () => { measure(); update(); });
+  new ResizeObserver(() => { measure(); update(); }).observe(document.body);
+
+  measure();
+  // A shared link such as /#good-fit: the browser jumps to the fragment
+  // natively, and may do so after this script, around `load`. Land on the
+  // mapped position now, then again at `load` and on the frame after it, as
+  // long as the page is still where we or the native jump put it (anything
+  // else means the reader has scrolled). Fonts and images can move the layout
+  // until `load`, so re-measure each time.
+  const opened = sectionInHash();
+  if (opened > 0) {
+    let landed = -1;
+    const reland = () => {
+      const untouched = landed < 0 || Math.abs(scrollY - landed) <= 2 || Math.abs(scrollY - nativeY(opened)) <= 2;
+      if (!untouched) return;
+      measure();
+      goTo(opened, "instant");
+      landed = scrollY;
+      update();
+    };
+    reland();
+    addEventListener("load", () => {
+      reland();
+      requestAnimationFrame(() => setTimeout(reland, 0));
+    }, { once: true });
+  }
+  update();
+</script>
+
+<style>
+  /* ── The strip (wide screens) ── */
+  .gauge {
+    --depth: 0;
+    --width: 4rem;
+    position: fixed;
+    /* The strip runs the full height; its content starts at --top, the
+       header's top (below the announcement bar until the header sticks), so
+       the readout lines up with the header. */
+    inset: 0 0 0 auto;
+    padding-top: var(--top, 0px);
+    z-index: 6;
+    width: var(--width);
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--olf-border-subtle);
+    background: color-mix(in srgb, var(--olf-bg-base) 70%, transparent);
+    backdrop-filter: blur(6px);
+  }
+
+  /* Rolling readout: each digit is a column of 0–9 shifted by --digit lines. */
+  /* Same height as the header (--head, border included), so their bottom
+     borders form one line. */
+  .readout {
+    box-sizing: border-box;
+    height: var(--head, 4.3rem);
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--olf-space-1);
+    border-bottom: 1px solid var(--olf-border-subtle);
+  }
+  .caption {
+    font: 500 0.5625rem / 1 var(--olf-font-mono);
+    letter-spacing: var(--olf-tracking-label);
+    text-transform: uppercase;
+    color: var(--olf-text-muted);
+  }
+  .value {
+    display: flex;
+    align-items: baseline;
+    font: 500 1rem / 1.25 var(--olf-font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--olf-highlight);
+  }
+  .roll {
+    --digit: 0;
+    display: flex;
+    flex-direction: column;
+    height: 1.25em;
+    overflow: hidden;
+  }
+  .roll span {
+    translate: 0 calc(var(--digit) * -100%);
+    transition: translate var(--olf-duration) var(--olf-ease);
+  }
+  .unit {
+    margin-left: 0.15em;
+    font-size: 0.6875rem;
+    color: var(--olf-text-muted);
+  }
+
+  /* The ruler is static and spans the whole page: 0 m at the top, the deepest
+     section at the bottom, inside --pad-top / --pad-bottom (in rem, read by
+     the script).
+     The level moves down it like a scrollbar thumb. */
+  .window {
+    --pad-top: 1.25rem;
+    --pad-bottom: 1.25rem;
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .gauge[data-dragging] .window { cursor: grabbing; }
+  .ruler {
+    position: absolute;
+    inset: 0;
+    container-type: size;
+  }
+  /* A depth's position on the ruler: m metres down the padded span. */
+  .tick,
+  .ruler li {
+    position: absolute;
+    top: calc(var(--pad-top) + (100% - var(--pad-top) - var(--pad-bottom)) * var(--m) / var(--max));
+  }
+  .tick {
+    right: 0;
+    width: 0.375rem;
+    height: 1px;
+    background: var(--olf-border-default);
+  }
+  .tick.mid { width: 0.75rem; background: var(--olf-border-strong); }
+  .tick.major { width: 1.25rem; background: var(--olf-text-muted); }
+
+  .ruler ol { margin: 0; padding: 0; list-style: none; }
+  .ruler li {
+    left: 0;
+    right: 0;
+  }
+  /* The depth sits just above its major tick and the name runs below it, so
+     the reading line never crosses the text. */
+  .ruler a {
+    position: absolute;
+    left: var(--olf-space-2);
+    top: -1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--olf-text-muted);
+    text-decoration: none;
+    /* Only the depth is clickable. Names are labels to read: a shown one lets
+       presses through to the depths and ruler it covers, and hidden ones,
+       which still take room, never stop a drag. */
+    pointer-events: none;
+  }
+  .mark {
+    pointer-events: auto;
+    font: 500 0.5625rem / 0.8rem var(--olf-font-mono);
+    letter-spacing: 0.04em;
+  }
+  /* Only the current section's name shows, in full, on a label running along
+     the ruler from its tick; it fades in when the reader arrives. Hovering a
+     depth shows that section's name instead. */
+  .name {
+    position: relative;
+    z-index: 1;
+    padding: 0.4rem 0.2rem;
+    writing-mode: vertical-rl;
+    white-space: nowrap;
+    font: 500 0.625rem / 1 var(--olf-font-mono);
+    letter-spacing: var(--olf-tracking-label);
+    text-transform: uppercase;
+    background: var(--olf-bg-base);
+    border: 1px solid var(--olf-border-subtle);
+    border-radius: var(--olf-radius-sm);
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 -0.25rem;
+    transition: opacity 0.3s, translate 0.3s, visibility 0.3s;
+  }
+  /* Below mid-depth a name runs upward from its tick, so every name has at
+     least half the ruler to fit in, whatever the window height. */
+  .ruler li.up a {
+    top: auto;
+    bottom: 0.15rem;
+    flex-direction: column-reverse;
+  }
+  .ruler li.up .name { translate: 0 0.25rem; }
+  .ruler a:hover,
+  .ruler a:focus-visible {
+    color: var(--olf-text-primary);
+  }
+  .ruler a[aria-current] { color: var(--olf-highlight); }
+  .ruler a[aria-current] .name { border-color: var(--olf-highlight); }
+  .ruler a[aria-current] .name,
+  .ruler a:hover .name,
+  .ruler a:focus-visible .name {
+    opacity: 1;
+    visibility: visible;
+    translate: 0 0;
+  }
+  /* While hovering another depth, its name replaces the current one. */
+  .ruler:has(a:hover) a[aria-current]:not(:hover) .name {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .ruler li:has(a:hover),
+  .ruler li:has(a[aria-current]) { z-index: 1; }
+
+  /* The level: the current depth on the static ruler, i.e. the scrollbar's
+     thumb, with a grip to drag and the water filled down to it. */
+  .level {
+    --at: calc(var(--pad-top) + (100% - var(--pad-top) - var(--pad-bottom)) * var(--depth) / var(--max));
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--at);
+    height: 2px;
+    margin-top: -1px;
+    background: var(--olf-highlight);
+    box-shadow: 0 0 12px var(--olf-highlight);
+    pointer-events: none;
+  }
+  .grip {
+    position: absolute;
+    left: 0;
+    top: -0.3125rem;
+    width: 0.375rem;
+    height: 0.75rem;
+    border-radius: 0 var(--olf-radius-sm) var(--olf-radius-sm) 0;
+    background: var(--olf-highlight);
+  }
+  .window::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: calc(var(--pad-top) + (100% - var(--pad-top) - var(--pad-bottom)) * var(--depth) / var(--max));
+    background: linear-gradient(transparent, var(--olf-tint-highlight));
+    pointer-events: none;
+  }
+
+  /* The probe follows the cursor and reads the depth under it. */
+  .probe {
+    --y: 0px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--y);
+    height: 1px;
+    background: var(--olf-text-primary);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--olf-duration-fast);
+  }
+  /* Inside the strip (the window clips anything outside it), above the line. */
+  .probe span {
+    position: absolute;
+    right: var(--olf-space-1);
+    bottom: 0.3rem;
+    padding: 0.15rem var(--olf-space-2);
+    border-radius: var(--olf-radius-sm);
+    background: var(--olf-bg-raised);
+    box-shadow: 0 0 0 1px var(--olf-border-default);
+    font: 500 0.6875rem / 1 var(--olf-font-mono);
+    white-space: nowrap;
+    color: var(--olf-text-primary);
+  }
+  .window:hover .probe { opacity: 1; }
+
+  /* ── Keyboard list: hidden until focused, then a panel left of the strip ── */
+  .keys:not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .keys:focus-within {
+    position: absolute;
+    top: var(--olf-space-4);
+    right: calc(100% + var(--olf-space-2));
+  }
+  /* On a short window the panel scrolls rather than running off-screen. */
+  .keys ol {
+    max-height: calc(100dvh - 2 * var(--olf-space-4));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .keys ol,
+  .jump ol {
+    margin: 0;
+    padding: var(--olf-space-2);
+    min-width: 15rem;
+    list-style: none;
+    border: 1px solid var(--olf-border-default);
+    border-radius: var(--olf-radius-lg);
+    background: var(--olf-bg-raised);
+    box-shadow: var(--olf-shadow-raised);
+  }
+  .keys a,
+  .jump ol a {
+    display: flex;
+    align-items: baseline;
+    gap: var(--olf-space-3);
+    padding: var(--olf-space-2) var(--olf-space-3);
+    border-radius: var(--olf-radius-md);
+    font-size: var(--olf-text-small);
+    color: var(--olf-text-secondary);
+    text-decoration: none;
+  }
+  .keys .depth,
+  .jump .depth { font: 500 0.6875rem / 1 var(--olf-font-mono); font-variant-numeric: tabular-nums; }
+  .keys a .depth,
+  .jump ol a .depth { width: 2.5rem; color: var(--olf-text-muted); }
+  .keys a[aria-current],
+  .jump ol a[aria-current] { background: var(--olf-bg-accent-subtle); color: var(--olf-link); }
+
+  /* ── "Sections" button (narrow screens) ── */
+  .jump {
+    position: fixed;
+    bottom: var(--olf-space-4);
+    left: 50%;
+    z-index: 4;
+    translate: -50% 0;
+    display: none;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease);
+  }
+  /* Hidden on the hero; `visibility` (after the fade) and `inert` keep it out
+     of keyboard reach. */
+  .jump[data-surfaced] {
+    opacity: 0;
+    translate: -50% 0.5rem;
+    visibility: hidden;
+    transition: opacity var(--olf-duration) var(--olf-ease), translate var(--olf-duration) var(--olf-ease),
+      visibility 0s linear var(--olf-duration);
+  }
+  .jump summary {
+    display: flex;
+    align-items: center;
+    gap: var(--olf-space-2);
+    padding: var(--olf-space-2) var(--olf-space-4);
+    border: 1px solid var(--olf-border-default);
+    border-radius: var(--olf-radius-full);
+    background: color-mix(in srgb, var(--olf-bg-raised) 92%, transparent);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--olf-shadow-raised);
+    font: 500 var(--olf-text-small) / 1.4 var(--olf-font-body);
+    color: var(--olf-text-primary);
+    list-style: none;
+    cursor: pointer;
+  }
+  .jump summary::-webkit-details-marker { display: none; }
+  .jump summary .depth { color: var(--olf-highlight); }
+  /* The list itself is styled with .keys above; here only its placement. */
+  .jump ol {
+    position: absolute;
+    bottom: calc(100% + var(--olf-space-2));
+    left: 50%;
+    translate: -50% 0;
+    /* Never taller than the room above the button; scrolls on short screens. */
+    max-height: calc(100dvh - 5.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* From 64rem wide the strip has its own column: the page keeps 4rem
+     (the strip's width) free on the right, so the ruler never covers content.
+     Below that, or on a window too short for a usable ruler, the button. */
+  @media (width > 64rem) and (height >= 30rem) {
+    :global(body) { padding-right: 4rem; }
+    /* The ruler is the scrollbar here: hide the native one (wheel, keys and
+       touch scrolling are unaffected). */
+    :global(html) { scrollbar-width: none; }
+    :global(html::-webkit-scrollbar) { display: none; }
+  }
+  @media (width <= 64rem), (height < 30rem) {
+    .gauge { display: none; }
+    .jump { display: block; }
+  }
+  /* Reduced motion is handled page-wide in styles/landing.css. */
+</style>
