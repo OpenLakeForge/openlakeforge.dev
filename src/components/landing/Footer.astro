@@ -40,7 +40,7 @@ import { repositoryUrl } from "../../lib/nav";
   /* Where the gauge gives way to the fixed "Sections" button (DepthGauge.astro),
      the button sits 16px above the bottom edge: leave it room so it never
      covers these links. */
-  @media (max-width: 64rem), (max-height: 29.9375rem) {
+  @media (width <= 64rem), (height < 30rem) {
     footer { padding-bottom: var(--olf-space-24); }
   }
 </style>

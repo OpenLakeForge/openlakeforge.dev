@@ -670,14 +670,14 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   /* From 64rem wide the strip has its own column: the page keeps 4rem
      (the strip's width) free on the right, so the ruler never covers content.
      Below that, or on a window too short for a usable ruler, the button. */
-  @media (min-width: 64.0625rem) and (min-height: 30rem) {
+  @media (width > 64rem) and (height >= 30rem) {
     :global(body) { padding-right: 4rem; }
     /* The ruler is the scrollbar here: hide the native one (wheel, keys and
        touch scrolling are unaffected). */
     :global(html) { scrollbar-width: none; }
     :global(html::-webkit-scrollbar) { display: none; }
   }
-  @media (max-width: 64rem), (max-height: 29.9375rem) {
+  @media (width <= 64rem), (height < 30rem) {
     .gauge { display: none; }
     .jump { display: block; }
   }
