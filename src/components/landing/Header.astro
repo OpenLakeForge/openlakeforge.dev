@@ -39,8 +39,16 @@ import { release } from "../../data/landing";
 
 <style>
   .announcement {
-    background: var(--olf-bg-accent-subtle);
+    position: relative;
+    z-index: 7; /* above the depth gauge (DepthGauge.astro), which starts below it */
+    /* Opaque, so the gauge never shows through. */
+    background: linear-gradient(var(--olf-bg-accent-subtle), var(--olf-bg-accent-subtle)), var(--olf-bg-base);
     border-bottom: 1px solid var(--olf-border-subtle);
+  }
+  /* The page keeps a 4rem column free for the gauge here (DepthGauge.astro):
+     the banner still spans the whole width. */
+  @media (width > 64rem) and (height >= 30rem) {
+    .announcement { margin-right: -4rem; }
   }
   .announcement p {
     display: flex;
