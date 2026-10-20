@@ -495,20 +495,21 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
   .ruler a:hover { color: var(--olf-text-primary); }
   .ruler a[aria-current] { color: var(--olf-highlight); }
 
-  /* The split-flap board hangs below the readout, against the strip's left
-     edge: one tile in a dark housing, as wide as the longest name (--chars).
-     Dark in both themes, like a real board. */
+  /* The split-flap board floats in the corner below the header and beside
+     the strip, the same gap (--board-gap) from both: one tile in a dark
+     housing, as wide as the longest name (--chars). Dark in both themes,
+     like a real board. */
   .board {
     --flap-h: 1.75rem;
+    --board-gap: 0.75rem;
     position: absolute;
-    top: calc(var(--top, 0px) + var(--head, 4.3rem) - 1px);
-    right: 100%;
+    top: calc(var(--top, 0px) + var(--head, 4.3rem) + var(--board-gap));
+    right: calc(100% + var(--board-gap));
     box-sizing: content-box;
     width: calc(var(--chars) * (1ch + 0.08em) + 1.5rem);
     height: var(--flap-h);
     border: 0.3125rem solid var(--abyss-950);
-    border-right: 0;
-    border-radius: 0 0 0 var(--olf-radius-md);
+    border-radius: var(--olf-radius-md);
     outline: 1px solid var(--abyss-700);
     box-shadow: 0 0.5rem 1.5rem -0.75rem rgb(0 0 0 / 0.5);
     perspective: 20rem;
