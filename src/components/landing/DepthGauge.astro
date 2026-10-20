@@ -496,28 +496,40 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
   .ruler a[aria-current] { color: var(--olf-highlight); }
 
   /* The split-flap board floats in the corner below the header and beside
-     the strip, the same gap (--board-gap) from both: one tile in a dark
-     housing, as wide as the longest name (--chars). Dark in both themes,
-     like a real board. */
+     the strip, the same gap (--board-gap) from both: one tile in a housing,
+     as wide as the longest name (--chars). Dark in the dark theme, pale with
+     dark ink in the light one. */
   .board {
     --flap-h: 1.75rem;
     --board-gap: 0.75rem;
+    --board-housing: var(--abyss-950);
+    --board-edge: var(--abyss-700);
+    --board-tile: var(--abyss-850);
+    --board-ink: var(--abyss-50);
+    --board-shadow: rgb(0 0 0 / 0.5);
     position: absolute;
     top: calc(var(--top, 0px) + var(--head, 4.3rem) + var(--board-gap));
     right: calc(100% + var(--board-gap));
     box-sizing: content-box;
     width: calc(var(--chars) * (1ch + 0.08em) + 1.5rem);
     height: var(--flap-h);
-    border: 0.3125rem solid var(--abyss-950);
+    border: 0.3125rem solid var(--board-housing);
     border-radius: var(--olf-radius-md);
-    outline: 1px solid var(--abyss-700);
-    box-shadow: 0 0.5rem 1.5rem -0.75rem rgb(0 0 0 / 0.5);
+    outline: 1px solid var(--board-edge);
+    box-shadow: 0 0.5rem 1.5rem -0.75rem var(--board-shadow);
     perspective: 20rem;
     font: 600 0.8125rem / var(--flap-h) var(--olf-font-mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--abyss-50);
+    color: var(--board-ink);
     pointer-events: none;
+  }
+  :global(:root[data-theme="light"]) .board {
+    --board-housing: var(--abyss-100);
+    --board-edge: var(--abyss-200);
+    --board-tile: #ffffff;
+    --board-ink: var(--abyss-900);
+    --board-shadow: rgb(15 42 64 / 0.18);
   }
   /* Each half shows half of a full-height line of text. */
   .half {
@@ -527,7 +539,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     overflow: hidden;
     display: flex;
     justify-content: center;
-    background: var(--abyss-850);
+    background: var(--board-tile);
     backface-visibility: hidden;
   }
   .half > span { height: var(--flap-h); white-space: nowrap; }
@@ -541,7 +553,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     inset: 50% 0 auto;
     z-index: 2;
     height: 1px;
-    background: var(--abyss-950);
+    background: var(--board-housing);
   }
   .fold { visibility: hidden; z-index: 1; }
   .board.flipping .fold { visibility: visible; }
