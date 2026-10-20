@@ -133,7 +133,8 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     rolls.tens.style.setProperty("--digit", String(Math.floor(shown / 10)));
     rolls.units.style.setProperty("--digit", String(shown % 10));
 
-    const index = Math.min(ids.length - 1, Math.floor(depth / step + 0.001));
+    // 0.1 m of tolerance: pixel-snapped scrolling can stop a hair above a depth.
+    const index = Math.min(ids.length - 1, Math.floor((depth + 0.1) / step));
     if (index === current) return;
     current = index;
     for (const a of links) {
@@ -162,13 +163,33 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     probeDepth.textContent = `${Math.round(depthUnder(e.clientY))} m`;
   });
   win.addEventListener("click", (e) => {
-    if ((e.target as HTMLElement).closest("a")) return; // section links scroll by themselves
+    if ((e.target as HTMLElement).closest("a")) return; // section links have their own handler
     scrollTo({ top: scrollFor(depthUnder(e.clientY)) });
   });
 
   jump?.addEventListener("click", (e) => {
     if ((e.target as HTMLElement).closest("a")) jump.open = false;
   });
+
+  // Section links scroll to their depth through the same mapping as the gauge.
+  // Usually that is exactly where the native jump lands (top minus
+  // scroll-margin); on a tall screen, where trailing sections are clamped and
+  // spread, the native jump would land at the bottom and read the last section.
+  // Keep what the native jump gives: the #hash in history, and focus.
+  for (const a of links) {
+    a.addEventListener("click", (e) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // new tab etc.
+      const index = ids.indexOf(a.dataset.section!);
+      const target = targets[index];
+      e.preventDefault();
+      // Spread positions are fractional and scrolling snaps to whole pixels:
+      // round up so the jump lands on (not just above) the section's depth.
+      scrollTo({ top: Math.ceil(scrollFor(index * step)) });
+      if (location.hash !== `#${target.id}`) history.pushState(null, "", `#${target.id}`);
+      target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+    });
+  }
 
   measure();
   update();
