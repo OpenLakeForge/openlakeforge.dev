@@ -37,9 +37,10 @@ import { repositoryUrl } from "../../lib/nav";
   }
   a:hover { color: var(--olf-text-primary); }
   nav { display: flex; gap: var(--olf-space-8); }
-  /* Below 64rem the fixed "Sections" button (DepthGauge.astro) sits 16px
-     above the bottom edge: leave it room so it never covers these links. */
-  @media (max-width: 64rem) {
+  /* Where the gauge gives way to the fixed "Sections" button (DepthGauge.astro),
+     the button sits 16px above the bottom edge: leave it room so it never
+     covers these links. */
+  @media (max-width: 64rem), (max-height: 29.9375rem) {
     footer { padding-bottom: var(--olf-space-24); }
   }
 </style>

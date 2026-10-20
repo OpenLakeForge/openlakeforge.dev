@@ -169,7 +169,9 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   const depthUnder = (clientY: number) => {
     const r = win.getBoundingClientRect();
     const top = remPx("--pad-top"), bottom = remPx("--pad-bottom");
-    const d = ((clientY - r.top - top) / (r.height - top - bottom)) * maxDepth;
+    const span = r.height - top - bottom;
+    if (span <= 0) return depthAt(scrollY); // no track to read: stay put
+    const d = ((clientY - r.top - top) / span) * maxDepth;
     return Math.min(maxDepth, Math.max(0, d));
   };
   const scrollToDepth = (clientY: number) => scrollTo({ top: scrollFor(depthUnder(clientY)), behavior: "instant" });
@@ -449,8 +451,12 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     gap: 0.45rem;
     color: var(--olf-text-muted);
     text-decoration: none;
+    /* Only the depth and a shown name are clickable: the hidden names still
+       take room, and pressing there must drag the level, not hit a link. */
+    pointer-events: none;
   }
   .mark {
+    pointer-events: auto;
     font: 500 0.5625rem / 0.8rem var(--olf-font-mono);
     letter-spacing: 0.04em;
   }
@@ -493,6 +499,7 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     opacity: 1;
     visibility: visible;
     translate: 0 0;
+    pointer-events: auto;
   }
   /* While hovering another depth, its name replaces the current one. */
   .ruler:has(a:hover) a[aria-current]:not(:hover) .name {
@@ -661,15 +668,15 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
 
   /* From 64rem wide the strip has its own column: the page keeps 4rem
      (the strip's width) free on the right, so the ruler never covers content.
-     Below that, the button. */
-  @media (min-width: 64.0625rem) {
+     Below that, or on a window too short for a usable ruler, the button. */
+  @media (min-width: 64.0625rem) and (min-height: 30rem) {
     :global(body) { padding-right: 4rem; }
     /* The ruler is the scrollbar here: hide the native one (wheel, keys and
        touch scrolling are unaffected). */
     :global(html) { scrollbar-width: none; }
     :global(html::-webkit-scrollbar) { display: none; }
   }
-  @media (max-width: 64rem) {
+  @media (max-width: 64rem), (max-height: 29.9375rem) {
     .gauge { display: none; }
     .jump { display: block; }
   }
