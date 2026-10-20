@@ -4,7 +4,8 @@
  * a strip on the right edge with a ruler in metres that slides under a fixed
  * reading line as the page scrolls. Each section sits ten metres below the
  * previous one (00 m Surface … 80 m Get started), so the reading is both a
- * progress bar and a map. A rolling readout at the top shows the depth;
+ * progress bar and a map. A rolling readout at the top shows the depth, and
+ * a split-flap board below it the current section's name;
  * hovering the ruler shows the depth under the cursor, and a click dives there.
  *
  * From 64rem wide the page reserves a column for the strip. Below that (tablets,
@@ -17,9 +18,11 @@ const metresPerSection = 10;
 const maxDepth = (sections.length - 1) * metresPerSection;
 const ticks = Array.from({ length: maxDepth + 1 }, (_, m) => m);
 const digits = Array.from({ length: 10 }, (_, d) => d);
+// The flap is as wide as the longest name, so the board never resizes.
+const boardChars = Math.max(...sections.map((s) => s.label.length));
 ---
 
-<div class="gauge" data-gauge data-max-depth={maxDepth} data-step={metresPerSection} style={`--max: ${maxDepth}; --segments: ${sections.length - 1}`}>
+<div class="gauge" data-gauge data-max-depth={maxDepth} data-step={metresPerSection} style={`--max: ${maxDepth}`}>
   <!-- The keyboard and screen-reader way in: the ruler below is a pointer-only
        picture whose links slide out of view, so they are not tab stops. This
        list is invisible until it receives focus, then opens beside the strip. -->
@@ -40,6 +43,17 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     </span>
   </div>
 
+  <!-- The current section's name on one split-flap tile hanging from the
+       readout, like a station departure board: the old name's top half falls
+       forward, then the new name's bottom half swings down. Static halves
+       show the new top and the old bottom behind the two folding ones. -->
+  <div class="board" data-board data-labels={JSON.stringify(sections.map((s) => s.label))} style={`--chars: ${boardChars}`} aria-hidden="true">
+    <span class="half top" data-half="top"><span></span></span>
+    <span class="half bottom" data-half="bottom"><span></span></span>
+    <span class="half top fold" data-half="fold-top"><span></span></span>
+    <span class="half bottom fold" data-half="fold-bottom"><span></span></span>
+  </div>
+
   <div class="window" data-window>
     <div class="ruler" data-ruler>
       {ticks.map((m) => (
@@ -50,12 +64,9 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
         />
       ))}
       <ol aria-hidden="true">
-        {sections.map(({ id, label }, i) => (
-          <li style={`--m: ${i * metresPerSection}`} class:list={{ up: i * metresPerSection > maxDepth / 2 }}>
-            <a href={`#${id}`} data-section={id} tabindex="-1">
-              <span class="mark">{String(i * metresPerSection).padStart(2, "0")}</span>
-              <span class="name">{label}</span>
-            </a>
+        {sections.map(({ id }, i) => (
+          <li style={`--m: ${i * metresPerSection}`}>
+            <a href={`#${id}`} data-section={id} tabindex="-1">{String(i * metresPerSection).padStart(2, "0")}</a>
           </li>
         ))}
       </ol>
@@ -135,6 +146,36 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     gauge.style.setProperty("--head", `${r.height}px`);
   };
 
+  // Split-flap board: one tile flips from the old name to the new one. The
+  // first name, and every name under reduced motion, is set without a flip.
+  const board = gauge.querySelector<HTMLElement>("[data-board]")!;
+  const labels: string[] = JSON.parse(board.dataset.labels!);
+  const half = (name: string) => board.querySelector<HTMLElement>(`[data-half="${name}"] > span`)!;
+  const halves = { top: half("top"), bottom: half("bottom"), foldTop: half("fold-top"), foldBottom: half("fold-bottom") };
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  let shown = "";
+  let settle = 0;
+  const setBoard = (text: string) => {
+    clearTimeout(settle);
+    const old = shown;
+    shown = text;
+    board.classList.remove("flipping");
+    if (!old || still.matches) {
+      for (const h of Object.values(halves)) h.textContent = text;
+      return;
+    }
+    halves.top.textContent = text;
+    halves.bottom.textContent = old;
+    halves.foldTop.textContent = old;
+    halves.foldBottom.textContent = text;
+    void board.offsetWidth; // restart the animation
+    board.classList.add("flipping");
+    settle = setTimeout(() => {
+      halves.bottom.textContent = text;
+      board.classList.remove("flipping");
+    }, 360);
+  };
+
   let current = -1;
   const update = () => {
     alignWithHeader();
@@ -148,6 +189,7 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     const index = Math.min(ids.length - 1, Math.floor((depth + 0.1) / step));
     if (index === current) return;
     current = index;
+    setBoard(labels[index]);
     for (const a of links) {
       if (a.dataset.section === ids[index]) a.setAttribute("aria-current", "location");
       else a.removeAttribute("aria-current");
@@ -439,76 +481,81 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     left: 0;
     right: 0;
   }
-  /* The depth sits just above its major tick and the name runs below it, so
-     the reading line never crosses the text. */
+  /* Each depth sits just above its major tick, so the reading line never
+     crosses it. */
   .ruler a {
     position: absolute;
     left: var(--olf-space-2);
     top: -1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.45rem;
-    color: var(--olf-text-muted);
-    text-decoration: none;
-    /* Only the depth is clickable. Names are labels to read: a shown one lets
-       presses through to the depths and ruler it covers, and hidden ones,
-       which still take room, never stop a drag. */
-    pointer-events: none;
-  }
-  .mark {
-    pointer-events: auto;
     font: 500 0.5625rem / 0.8rem var(--olf-font-mono);
     letter-spacing: 0.04em;
+    color: var(--olf-text-muted);
+    text-decoration: none;
   }
-  /* Only the current section's name shows, in full, on a label running along
-     the ruler from its tick; it fades in when the reader arrives. Hovering a
-     depth shows that section's name instead. */
-  .name {
-    position: relative;
-    z-index: 1;
-    padding: 0.4rem 0.2rem;
-    writing-mode: vertical-rl;
-    white-space: nowrap;
-    font: 500 0.625rem / 1 var(--olf-font-mono);
-    letter-spacing: var(--olf-tracking-label);
-    text-transform: uppercase;
-    background: var(--olf-bg-base);
-    border: 1px solid var(--olf-border-subtle);
-    border-radius: var(--olf-radius-sm);
-    opacity: 0;
-    visibility: hidden;
-    translate: 0 -0.25rem;
-    transition: opacity 0.3s, translate 0.3s, visibility 0.3s;
-  }
-  /* Below mid-depth a name runs upward from its tick, so every name has at
-     least half the ruler to fit in, whatever the window height. */
-  .ruler li.up a {
-    top: auto;
-    bottom: 0.15rem;
-    flex-direction: column-reverse;
-  }
-  .ruler li.up .name { translate: 0 0.25rem; }
-  .ruler a:hover,
-  .ruler a:focus-visible {
-    color: var(--olf-text-primary);
-  }
+  .ruler a:hover { color: var(--olf-text-primary); }
   .ruler a[aria-current] { color: var(--olf-highlight); }
-  .ruler a[aria-current] .name { border-color: var(--olf-highlight); }
-  .ruler a[aria-current] .name,
-  .ruler a:hover .name,
-  .ruler a:focus-visible .name {
-    opacity: 1;
-    visibility: visible;
-    translate: 0 0;
+
+  /* The split-flap board hangs below the readout, against the strip's left
+     edge: one tile in a dark housing, as wide as the longest name (--chars).
+     Dark in both themes, like a real board. */
+  .board {
+    --flap-h: 1.75rem;
+    position: absolute;
+    top: calc(var(--top, 0px) + var(--head, 4.3rem) - 1px);
+    right: 100%;
+    box-sizing: content-box;
+    width: calc(var(--chars) * (1ch + 0.08em) + 1.5rem);
+    height: var(--flap-h);
+    border: 0.3125rem solid var(--abyss-950);
+    border-right: 0;
+    border-radius: 0 0 0 var(--olf-radius-md);
+    outline: 1px solid var(--abyss-700);
+    box-shadow: 0 0.5rem 1.5rem -0.75rem rgb(0 0 0 / 0.5);
+    perspective: 20rem;
+    font: 600 0.8125rem / var(--flap-h) var(--olf-font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--abyss-50);
+    pointer-events: none;
   }
-  /* While hovering another depth, its name replaces the current one. */
-  .ruler:has(a:hover) a[aria-current]:not(:hover) .name {
-    opacity: 0;
-    visibility: hidden;
+  /* Each half shows half of a full-height line of text. */
+  .half {
+    position: absolute;
+    inset-inline: 0;
+    height: 50%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    background: var(--abyss-850);
+    backface-visibility: hidden;
   }
-  .ruler li:has(a:hover),
-  .ruler li:has(a[aria-current]) { z-index: 1; }
+  .half > span { height: var(--flap-h); white-space: nowrap; }
+  .half.top { top: 0; border-radius: 3px 3px 0 0; transform-origin: 50% 100%; }
+  .half.bottom { bottom: 0; border-radius: 0 0 3px 3px; transform-origin: 50% 0; }
+  .half.bottom > span { margin-top: calc(var(--flap-h) / -2); }
+  /* The hinge: a dark line between the halves. */
+  .board::after {
+    content: "";
+    position: absolute;
+    inset: 50% 0 auto;
+    z-index: 2;
+    height: 1px;
+    background: var(--abyss-950);
+  }
+  .fold { visibility: hidden; z-index: 1; }
+  .board.flipping .fold { visibility: visible; }
+  .board.flipping .fold.top { animation: fold-top 0.18s ease-in forwards; }
+  .board.flipping .fold.bottom {
+    transform: rotateX(90deg);
+    animation: fold-bottom 0.18s ease-out 0.18s forwards;
+  }
+  @keyframes fold-top {
+    to { transform: rotateX(-90deg); filter: brightness(0.55); }
+  }
+  @keyframes fold-bottom {
+    from { transform: rotateX(90deg); filter: brightness(1.4); }
+    to { transform: rotateX(0); filter: none; }
+  }
 
   /* The level: the current depth on the static ruler, i.e. the scrollbar's
      thumb, with a grip to drag and the water filled down to it. */
