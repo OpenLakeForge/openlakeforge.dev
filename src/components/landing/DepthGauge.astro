@@ -51,7 +51,7 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
       ))}
       <ol aria-hidden="true">
         {sections.map(({ id, label }, i) => (
-          <li style={`--m: ${i * metresPerSection}`}>
+          <li style={`--m: ${i * metresPerSection}`} class:list={{ up: i * metresPerSection > maxDepth / 2 }}>
             <a href={`#${id}`} data-section={id} tabindex="-1">
               <span class="mark">{String(i * metresPerSection).padStart(2, "0")}</span>
               <span class="name">{label}</span>
@@ -451,8 +451,9 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     gap: 0.45rem;
     color: var(--olf-text-muted);
     text-decoration: none;
-    /* Only the depth and a shown name are clickable: the hidden names still
-       take room, and pressing there must drag the level, not hit a link. */
+    /* Only the depth is clickable. Names are labels to read: a shown one lets
+       presses through to the depths and ruler it covers, and hidden ones,
+       which still take room, never stop a drag. */
     pointer-events: none;
   }
   .mark {
@@ -460,10 +461,9 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     font: 500 0.5625rem / 0.8rem var(--olf-font-mono);
     letter-spacing: 0.04em;
   }
-  /* Only the current section's name shows, in full, on a label running down
+  /* Only the current section's name shows, in full, on a label running along
      the ruler from its tick; it fades in when the reader arrives. Hovering a
-     depth shows that section's name instead. The last name runs upward, so
-     the ruler needs no room below 80 m. */
+     depth shows that section's name instead. */
   .name {
     position: relative;
     z-index: 1;
@@ -481,12 +481,14 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     translate: 0 -0.25rem;
     transition: opacity 0.3s, translate 0.3s, visibility 0.3s;
   }
-  .ruler li:last-child a {
+  /* Below mid-depth a name runs upward from its tick, so every name has at
+     least half the ruler to fit in, whatever the window height. */
+  .ruler li.up a {
     top: auto;
     bottom: 0.15rem;
     flex-direction: column-reverse;
   }
-  .ruler li:last-child .name { translate: 0 0.25rem; }
+  .ruler li.up .name { translate: 0 0.25rem; }
   .ruler a:hover,
   .ruler a:focus-visible {
     color: var(--olf-text-primary);
@@ -499,7 +501,6 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     opacity: 1;
     visibility: visible;
     translate: 0 0;
-    pointer-events: auto;
   }
   /* While hovering another depth, its name replaces the current one. */
   .ruler:has(a:hover) a[aria-current]:not(:hover) .name {
