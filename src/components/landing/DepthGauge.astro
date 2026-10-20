@@ -19,7 +19,7 @@ const ticks = Array.from({ length: maxDepth + 1 }, (_, m) => m);
 const digits = Array.from({ length: 10 }, (_, d) => d);
 ---
 
-<div class="gauge" data-gauge data-max-depth={maxDepth} data-step={metresPerSection}>
+<div class="gauge" data-gauge data-max-depth={maxDepth} data-step={metresPerSection} style={`--max: ${maxDepth}; --segments: ${sections.length - 1}`}>
   <!-- The keyboard and screen-reader way in: the ruler below is a pointer-only
        picture whose links slide out of view, so they are not tab stops. This
        list is invisible until it receives focus, then opens beside the strip. -->
@@ -52,7 +52,7 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
       <ol aria-hidden="true">
         {sections.map(({ id, label }, i) => (
           <li style={`--m: ${i * metresPerSection}`}>
-            <a href={`#${id}`} data-section={id} tabindex="-1">
+            <a href={`#${id}`} data-section={id} tabindex="-1" title={label}>
               <span class="mark">{String(i * metresPerSection).padStart(2, "0")}</span>
               <span class="name">{label}</span>
             </a>
@@ -60,7 +60,7 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
         ))}
       </ol>
     </div>
-    <span class="reading" aria-hidden="true"></span>
+    <span class="level" aria-hidden="true"><span class="grip"></span></span>
     <span class="probe" data-probe aria-hidden="true"><span data-probe-depth>0 m</span></span>
   </div>
 </div>
@@ -125,8 +125,19 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   const depthAt = (y: number) => interpolate(y, "y", "d");
   const scrollFor = (d: number) => interpolate(d, "d", "y");
 
+  // The readout lines up with the page header: same top (the header sits
+  // below the announcement bar until it sticks) and same height.
+  const header = document.querySelector<HTMLElement>("body > header");
+  const alignWithHeader = () => {
+    if (!header) return;
+    const r = header.getBoundingClientRect();
+    gauge.style.setProperty("--top", `${Math.max(0, r.top)}px`);
+    gauge.style.setProperty("--head", `${r.height}px`);
+  };
+
   let current = -1;
   const update = () => {
+    alignWithHeader();
     const depth = depthAt(scrollY);
     gauge.style.setProperty("--depth", depth.toFixed(2));
     const shown = Math.min(maxDepth, Math.round(depth));
@@ -150,22 +161,41 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     if (jumpDepth) jumpDepth.textContent = `${String(index * step).padStart(2, "0")} m`;
   };
 
-  // Hover the ruler to read the depth under the cursor; click to dive there.
-  const pxPerMetre = () => parseFloat(getComputedStyle(gauge).getPropertyValue("--px-per-m"));
+  // The ruler is the page's scrollbar: 0 m at its top, the deepest section at
+  // its bottom, inside --pad-top / --pad-bottom (rem). Hovering reads the depth
+  // under the cursor; pressing moves the level there, and dragging scrolls.
+  const remPx = (name: string) =>
+    parseFloat(getComputedStyle(win).getPropertyValue(name)) * parseFloat(getComputedStyle(document.documentElement).fontSize);
   const depthUnder = (clientY: number) => {
     const r = win.getBoundingClientRect();
-    const d = depthAt(scrollY) + (clientY - (r.top + r.height / 2)) / pxPerMetre();
+    const top = remPx("--pad-top"), bottom = remPx("--pad-bottom");
+    const d = ((clientY - r.top - top) / (r.height - top - bottom)) * maxDepth;
     return Math.min(maxDepth, Math.max(0, d));
   };
+  const scrollToDepth = (clientY: number) => scrollTo({ top: scrollFor(depthUnder(clientY)), behavior: "instant" });
+  let dragging = false;
+  win.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || (e.target as HTMLElement).closest("a")) return; // section links have their own handler
+    e.preventDefault();
+    dragging = true;
+    win.setPointerCapture(e.pointerId);
+    gauge.toggleAttribute("data-dragging", true);
+    scrollToDepth(e.clientY);
+  });
   win.addEventListener("pointermove", (e) => {
     const r = win.getBoundingClientRect();
-    probe.style.setProperty("--y", `${e.clientY - r.top}px`);
+    probe.style.setProperty("--y", `${Math.min(r.height, Math.max(0, e.clientY - r.top))}px`);
     probeDepth.textContent = `${Math.round(depthUnder(e.clientY))} m`;
+    if (dragging) scrollToDepth(e.clientY);
   });
-  win.addEventListener("click", (e) => {
-    if ((e.target as HTMLElement).closest("a")) return; // section links have their own handler
-    scrollTo({ top: scrollFor(depthUnder(e.clientY)) });
-  });
+  const stopDrag = (e: PointerEvent) => {
+    if (!dragging) return;
+    dragging = false;
+    if (win.hasPointerCapture(e.pointerId)) win.releasePointerCapture(e.pointerId);
+    gauge.toggleAttribute("data-dragging", false);
+  };
+  win.addEventListener("pointerup", stopDrag);
+  win.addEventListener("pointercancel", stopDrag);
 
   jump?.addEventListener("click", (e) => {
     if ((e.target as HTMLElement).closest("a")) jump.open = false;
@@ -293,13 +323,13 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   /* ── The strip (wide screens) ── */
   .gauge {
     --depth: 0;
-    --px-per-m: 22;
-    --unit: calc(var(--px-per-m) * 1px);
     --width: 4rem;
     position: fixed;
+    /* The strip runs the full height; its content starts at --top, the
+       header's top (below the announcement bar until the header sticks), so
+       the readout lines up with the header. */
     inset: 0 0 0 auto;
-    /* Above the sticky header (5): the strip runs the full height, readout
-       included. It only covers the header's empty right margin. */
+    padding-top: var(--top, 0px);
     z-index: 6;
     width: var(--width);
     display: flex;
@@ -310,12 +340,17 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   }
 
   /* Rolling readout: each digit is a column of 0–9 shifted by --digit lines. */
+  /* Same height as the header (--head, border included), so their bottom
+     borders form one line. */
   .readout {
+    box-sizing: border-box;
+    height: var(--head, 4.3rem);
+    flex: none;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: var(--olf-space-1);
-    padding: var(--olf-space-5) 0 var(--olf-space-3);
     border-bottom: 1px solid var(--olf-border-subtle);
   }
   .caption {
@@ -348,23 +383,33 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     color: var(--olf-text-muted);
   }
 
-  /* The ruler slides so that the current depth sits on the reading line. */
+  /* The ruler is static and spans the whole page: 0 m at the top, the deepest
+     section at the bottom, inside --pad-top / --pad-bottom (in rem, read by
+     the script).
+     The level moves down it like a scrollbar thumb. */
   .window {
+    --pad-top: 1.25rem;
+    --pad-bottom: 6rem; /* room for the last section's name below its tick */
     position: relative;
     flex: 1;
     overflow: hidden;
     cursor: crosshair;
+    touch-action: none;
   }
+  .gauge[data-dragging] .window { cursor: grabbing; }
   .ruler {
     position: absolute;
     inset: 0;
-    translate: 0 calc(50% - var(--depth) * var(--unit));
-    height: 100%;
+    container-type: size;
+  }
+  /* A depth's position on the ruler: m metres down the padded span. */
+  .tick,
+  .ruler li {
+    position: absolute;
+    top: calc(var(--pad-top) + (100% - var(--pad-top) - var(--pad-bottom)) * var(--m) / var(--max));
   }
   .tick {
-    position: absolute;
     right: 0;
-    top: calc(var(--m) * var(--unit));
     width: 0.375rem;
     height: 1px;
     background: var(--olf-border-default);
@@ -374,10 +419,8 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
 
   .ruler ol { margin: 0; padding: 0; list-style: none; }
   .ruler li {
-    position: absolute;
     left: 0;
     right: 0;
-    top: calc(var(--m) * var(--unit));
   }
   /* The depth sits just above its major tick and the name runs below it, so
      the reading line never crosses the text. */
@@ -396,10 +439,11 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     font: 500 0.5625rem / 0.8rem var(--olf-font-mono);
     letter-spacing: 0.04em;
   }
-  /* Section names run down the ruler from their major tick. */
+  /* Section names run down the ruler from their major tick, within their own
+     segment (cqh: the ruler's height). */
   .name {
     writing-mode: vertical-rl;
-    max-height: calc(var(--unit) * 8.5);
+    max-height: calc((100cqh - var(--pad-top) - var(--pad-bottom)) / var(--segments) - 1.6rem);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -417,22 +461,34 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   .ruler a[aria-current] { color: var(--olf-highlight); }
   .ruler a[aria-current] .name { opacity: 1; }
 
-  /* The fixed reading line, with the water above it. */
-  .reading {
+  /* The level: the current depth on the static ruler, i.e. the scrollbar's
+     thumb, with a grip to drag and the water filled down to it. */
+  .level {
+    --at: calc(var(--pad-top) + (100% - var(--pad-top) - var(--pad-bottom)) * var(--depth) / var(--max));
     position: absolute;
     left: 0;
     right: 0;
-    top: 50%;
+    top: var(--at);
     height: 2px;
     margin-top: -1px;
     background: var(--olf-highlight);
     box-shadow: 0 0 12px var(--olf-highlight);
     pointer-events: none;
   }
+  .grip {
+    position: absolute;
+    left: 0;
+    top: -0.3125rem;
+    width: 0.375rem;
+    height: 0.75rem;
+    border-radius: 0 var(--olf-radius-sm) var(--olf-radius-sm) 0;
+    background: var(--olf-highlight);
+  }
   .window::before {
     content: "";
     position: absolute;
-    inset: 0 0 50%;
+    inset: 0 0 auto;
+    height: calc(var(--pad-top) + (100% - var(--pad-top) - var(--pad-bottom)) * var(--depth) / var(--max));
     background: linear-gradient(transparent, var(--olf-tint-highlight));
     pointer-events: none;
   }
@@ -567,6 +623,10 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
      Below that, the button. */
   @media (min-width: 64.0625rem) {
     :global(body) { padding-right: 4rem; }
+    /* The ruler is the scrollbar here: hide the native one (wheel, keys and
+       touch scrolling are unaffected). */
+    :global(html) { scrollbar-width: none; }
+    :global(html::-webkit-scrollbar) { display: none; }
   }
   @media (max-width: 64rem) {
     .gauge { display: none; }

@@ -32,8 +32,11 @@ a { color: var(--olf-link); }
 /* Jumping to a section lands below the sticky header. */
 section[id] { scroll-margin-top: 5rem; }
 
-/* A section: eyebrow, title, lede, then content. */
-.section { padding-top: var(--olf-space-32); }
+/* A section: eyebrow, title, lede, then content. Jumping to one puts its
+   eyebrow 6.25rem from the top, just under the sticky header, instead of
+   showing its whole top padding and the end of the previous section. */
+.section { --section-pad: var(--olf-space-32); padding-top: var(--section-pad); }
+section[id].section { scroll-margin-top: calc(6.25rem - var(--section-pad)); }
 .section-head { display: flex; flex-direction: column; gap: var(--olf-space-4); max-width: 52rem; margin-bottom: var(--olf-space-10); }
 .section-head.center { align-items: center; text-align: center; margin-inline: auto; }
 .eyebrow {
@@ -143,7 +146,7 @@ section[id] { scroll-margin-top: 5rem; }
 }
 @media (max-width: 48rem) {
   :root { --gutter: var(--olf-space-4); }
-  .section { padding-top: var(--olf-space-20); }
+  .section { --section-pad: var(--olf-space-20); }
   .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
