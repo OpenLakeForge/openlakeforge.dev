@@ -56,6 +56,7 @@ section[id].section { scroll-margin-top: calc(6.25rem - var(--section-pad)); }
 .display {
   margin: 0;
   font: 400 clamp(2.75rem, 7vw, var(--olf-text-display)) / var(--olf-leading-display) var(--olf-font-display);
+  font-variation-settings: var(--olf-font-display-axes);
   letter-spacing: -0.01em;
   text-wrap: balance;
 }

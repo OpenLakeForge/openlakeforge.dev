@@ -32,7 +32,9 @@ const width = Math.max(...projectTree.map((l) => l.line.length)) + 3;
 </section>
 
 <style>
-  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--olf-space-12); align-items: center; }
+  /* The tree takes the width its longest line needs, and only scrolls when
+     the text column is down to its minimum. */
+  .split { display: grid; grid-template-columns: minmax(22rem, 1fr) minmax(0, max-content); gap: var(--olf-space-12); align-items: center; }
   .section-head { margin-bottom: var(--olf-space-8); }
   .lede code { font-family: var(--olf-font-mono); font-size: 0.9em; color: var(--olf-link); }
   .card.default { border-color: var(--olf-accent); }

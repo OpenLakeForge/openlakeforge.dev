@@ -75,7 +75,7 @@ export const agentSession: { kind: "you" | "cmd" | "note" | "ok" | "wait" | "gap
   { kind: "gap" },
   { kind: "note", text: "reads   openlakeforge.yaml, lakehouse.yaml" },
   { kind: "cmd", text: "olf source new orders" },
-  { kind: "note", text: "writes  silver/sales/orders.yaml", comment: "Floe contract" },
+  { kind: "note", text: "writes  silver/sales/orders.yaml", comment: "data contract" },
   { kind: "cmd", text: "olf product new sales/revenue_by_region" },
   { kind: "note", text: "writes  gold/revenue_by_region/models/*.sql" },
   { kind: "note", text: "opens   pull request #42" },
@@ -87,13 +87,13 @@ export const agentSession: { kind: "you" | "cmd" | "note" | "ok" | "wait" | "gap
 
 export const projectTree = [
   { line: "my-lakehouse/", comment: "" },
-  { line: "├── openlakeforge.yaml", comment: "provider, stages, preset" },
+  { line: "├── openlakeforge.yaml", comment: "provider, stages" },
   { line: "└── lakehouse_code/", comment: "" },
-  { line: "    ├── lakehouse.yaml", comment: "domains and data products" },
-  { line: "    ├── bronze/", comment: "sources and their dlt loaders" },
-  { line: "    ├── silver/", comment: "Floe contracts per domain" },
-  { line: "    ├── gold/", comment: "dbt projects per product" },
-  { line: "    ├── pipelines/dagster/", comment: "one job per product" },
+  { line: "    ├── lakehouse.yaml", comment: "domains, products" },
+  { line: "    ├── bronze/", comment: "dlt sources" },
+  { line: "    ├── silver/", comment: "data contracts" },
+  { line: "    ├── gold/", comment: "dbt models" },
+  { line: "    ├── pipelines/dagster/", comment: "jobs" },
   { line: "    └── dashboards/superset/", comment: "" },
 ];
 
@@ -116,7 +116,7 @@ export const fit = {
   ],
   notYet: [
     "Streaming workloads: v1 is batch-first",
-    "Production-critical use: the project is alpha",
+    "Large organisations whose platform team already builds its own",
     "Teams that want a fully managed SaaS",
   ],
 };
