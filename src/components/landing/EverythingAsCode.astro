@@ -37,7 +37,9 @@ const lines = agentSession.map(({ kind, text = "", comment }) => ({ kind, mark: 
 </section>
 
 <style>
-  .split { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--olf-space-6); align-items: start; }
+  /* The session takes the width its lines need (up to 30rem, past which the
+     request wraps); the table takes the rest. */
+  .split { display: grid; grid-template-columns: minmax(22rem, 1fr) minmax(0, max-content); gap: var(--olf-space-6); align-items: start; }
   table {
     width: 100%;
     border-collapse: separate;
@@ -53,7 +55,7 @@ const lines = agentSession.map(({ kind, text = "", comment }) => ({ kind, mark: 
   .what { font-size: var(--olf-text-small); line-height: 1.4; color: var(--olf-text-secondary); }
   td code { font: var(--olf-text-small) / 1.4 var(--olf-font-mono); color: var(--olf-link); }
   td:last-child { text-align: right; }
-  .session { margin: 0; }
+  .session { margin: 0; max-width: 30rem; }
   figcaption {
     display: flex;
     justify-content: space-between;
@@ -65,12 +67,16 @@ const lines = agentSession.map(({ kind, text = "", comment }) => ({ kind, mark: 
   }
   .line { display: block; white-space: pre; min-height: 1.7em; }
   .gap { min-height: 0.75em; }
+  /* The request is prose, so it wraps (under its own text, past the "> ")
+     instead of widening the terminal. */
+  .you { white-space: pre-wrap; padding-left: 2ch; text-indent: -2ch; }
   .note { color: var(--abyss-400); }
   .ok { color: var(--reed-400); }
   .wait { color: var(--sand-400); }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   @media (max-width: 64rem) {
     .split { grid-template-columns: minmax(0, 1fr); }
+    .session { max-width: none; }
   }
   @media (max-width: 48rem) {
     tr { display: flex; flex-direction: column; }
