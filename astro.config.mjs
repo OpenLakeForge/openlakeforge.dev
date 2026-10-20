@@ -18,8 +18,8 @@ export default defineConfig({
       favicon: "/favicon.svg",
       social: [{ icon: "github", label: "GitHub", href: repositoryUrl }],
       customCss: [
-        "@fontsource/instrument-serif/400.css",
-        "@fontsource/instrument-serif/400-italic.css",
+        "@fontsource-variable/fraunces/full.css",
+        "@fontsource-variable/fraunces/full-italic.css",
         "@fontsource-variable/space-grotesk",
         "@fontsource-variable/inter",
         "@fontsource-variable/jetbrains-mono",

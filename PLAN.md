@@ -103,7 +103,7 @@ openlakeforge.dev/
 ## Phase 1: Scaffold and theme
 
 1. Create the Astro + Starlight project (`@astrojs/starlight`, `@astrojs/sitemap`,
-   Fontsource for Instrument Serif, Space Grotesk, Inter, JetBrains Mono).
+   Fontsource for Fraunces, Space Grotesk, Inter, JetBrains Mono).
 2. Copy `tokens.css` from the portal (`src/styles/tokens.css` in openlakeforge-portal).
 3. Map Starlight to Deep Water in `starlight.css`:
    - `--sl-color-accent*` → `--olf-accent`, `--olf-link`, `--olf-highlight`
