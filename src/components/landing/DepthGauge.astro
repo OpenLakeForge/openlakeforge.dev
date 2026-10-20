@@ -232,11 +232,24 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   // (olfY), refreshed while scrolling and written just before a section jump.
   // Back and Forward restore it explicitly: on a tall screen the browser would
   // otherwise jump to the entry's fragment (the bottom) instead.
+  // history.state is written at most every 250 ms (browsers throttle it), so
+  // Back within that time would leave a stale olfY. Where the Navigation API
+  // exists, positions are also kept in memory per entry, on every scroll, and
+  // take precedence.
+  const entryKey = () =>
+    (window as { navigation?: { currentEntry?: { key: string } } }).navigation?.currentEntry?.key;
+  const positions = new Map<string, number>();
+  let restoring = false;
+  const track = () => {
+    const key = entryKey();
+    if (key) positions.set(key, scrollY);
+  };
   const remember = () => {
     history.replaceState({ ...(history.state ?? {}), olfY: scrollY }, "");
   };
   let rememberTimer = 0;
   addEventListener("scroll", () => {
+    if (!restoring) track();
     clearTimeout(rememberTimer);
     rememberTimer = setTimeout(remember, 250);
   }, { passive: true });
@@ -254,19 +267,21 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
       const url = `#${ids[index]}`;
       if (location.hash !== url) history.pushState({ olfY: scrollY }, "", url);
       else remember();
+      track();
     });
   }
 
   // Back/Forward to an entry with a remembered position: restore it after the
   // browser's own handling, and ignore the hashchange the traversal fires.
-  let restoring = false;
   addEventListener("popstate", (e) => {
-    const y = (e.state as { olfY?: unknown } | null)?.olfY;
+    const key = entryKey();
+    const y = (key && positions.get(key)) ?? (e.state as { olfY?: unknown } | null)?.olfY;
     if (typeof y !== "number") return;
     restoring = true;
     setTimeout(() => {
       scrollTo({ top: y, behavior: "instant" });
       restoring = false;
+      track();
     }, 0);
   });
 
