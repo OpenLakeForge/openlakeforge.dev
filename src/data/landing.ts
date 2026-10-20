@@ -116,7 +116,7 @@ export const fit = {
   ],
   notYet: [
     "Streaming workloads: v1 is batch-first",
-    "Production-critical use: the project is alpha",
+    "Large organisations whose platform team already builds its own",
     "Teams that want a fully managed SaaS",
   ],
 };
