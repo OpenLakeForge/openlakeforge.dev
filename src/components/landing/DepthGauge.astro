@@ -52,7 +52,7 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
       <ol aria-hidden="true">
         {sections.map(({ id, label }, i) => (
           <li style={`--m: ${i * metresPerSection}`}>
-            <a href={`#${id}`} data-section={id} tabindex="-1" title={label}>
+            <a href={`#${id}`} data-section={id} tabindex="-1">
               <span class="mark">{String(i * metresPerSection).padStart(2, "0")}</span>
               <span class="name">{label}</span>
             </a>
@@ -404,7 +404,7 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
      The level moves down it like a scrollbar thumb. */
   .window {
     --pad-top: 1.25rem;
-    --pad-bottom: 6rem; /* room for the last section's name below its tick */
+    --pad-bottom: 1.25rem;
     position: relative;
     flex: 1;
     overflow: hidden;
@@ -454,27 +454,53 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     font: 500 0.5625rem / 0.8rem var(--olf-font-mono);
     letter-spacing: 0.04em;
   }
-  /* Section names run down the ruler from their major tick, within their own
-     segment (cqh: the ruler's height). */
+  /* Only the current section's name shows, in full, on a label running down
+     the ruler from its tick; it fades in when the reader arrives. Hovering a
+     depth shows that section's name instead. The last name runs upward, so
+     the ruler needs no room below 80 m. */
   .name {
+    position: relative;
+    z-index: 1;
+    padding: 0.4rem 0.2rem;
     writing-mode: vertical-rl;
-    max-height: calc((100cqh - var(--pad-top) - var(--pad-bottom)) / var(--segments) - 1.6rem);
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
     font: 500 0.625rem / 1 var(--olf-font-mono);
     letter-spacing: var(--olf-tracking-label);
     text-transform: uppercase;
-    opacity: 0.7;
+    background: var(--olf-bg-base);
+    border: 1px solid var(--olf-border-subtle);
+    border-radius: var(--olf-radius-sm);
+    opacity: 0;
+    visibility: hidden;
+    translate: 0 -0.25rem;
+    transition: opacity 0.3s, translate 0.3s, visibility 0.3s;
   }
+  .ruler li:last-child a {
+    top: auto;
+    bottom: 0.15rem;
+    flex-direction: column-reverse;
+  }
+  .ruler li:last-child .name { translate: 0 0.25rem; }
   .ruler a:hover,
   .ruler a:focus-visible {
     color: var(--olf-text-primary);
   }
-  .ruler a:hover .name,
-  .ruler a:focus-visible .name { opacity: 1; }
   .ruler a[aria-current] { color: var(--olf-highlight); }
-  .ruler a[aria-current] .name { opacity: 1; }
+  .ruler a[aria-current] .name { border-color: var(--olf-highlight); }
+  .ruler a[aria-current] .name,
+  .ruler a:hover .name,
+  .ruler a:focus-visible .name {
+    opacity: 1;
+    visibility: visible;
+    translate: 0 0;
+  }
+  /* While hovering another depth, its name replaces the current one. */
+  .ruler:has(a:hover) a[aria-current]:not(:hover) .name {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .ruler li:has(a:hover),
+  .ruler li:has(a[aria-current]) { z-index: 1; }
 
   /* The level: the current depth on the static ruler, i.e. the scrollbar's
      thumb, with a grip to drag and the water filled down to it. */
