@@ -183,7 +183,33 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     targets[index].setAttribute("tabindex", "-1");
     targets[index].focus({ preventScroll: true });
   };
-  const sectionInHash = () => ids.indexOf(decodeURIComponent(location.hash.slice(1)));
+  // Index of the section named by the URL fragment, or -1. A malformed
+  // fragment such as "#%" makes decodeURIComponent throw: treat it as unknown.
+  const sectionInHash = () => {
+    try {
+      return ids.indexOf(decodeURIComponent(location.hash.slice(1)));
+    } catch {
+      return -1;
+    }
+  };
+  // Where the browser's own fragment jump puts a section.
+  const nativeY = (index: number) => Math.min(
+    document.documentElement.scrollHeight - innerHeight,
+    Math.max(0, targets[index].getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(targets[index]).scrollMarginTop)),
+  );
+
+  // History: each entry keeps the reader's scroll position in history.state
+  // (olfY), refreshed while scrolling and written just before a section jump.
+  // Back and Forward restore it explicitly: on a tall screen the browser would
+  // otherwise jump to the entry's fragment (the bottom) instead.
+  const remember = () => {
+    history.replaceState({ ...(history.state ?? {}), olfY: scrollY }, "");
+  };
+  let rememberTimer = 0;
+  addEventListener("scroll", () => {
+    clearTimeout(rememberTimer);
+    rememberTimer = setTimeout(remember, 250);
+  }, { passive: true });
 
   // Clicks on section links (ruler, keyboard list, mobile list): pushState
   // keeps the #hash in history without a second, native jump.
@@ -192,16 +218,49 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // new tab etc.
       const index = ids.indexOf(a.dataset.section!);
       e.preventDefault();
+      clearTimeout(rememberTimer);
+      remember();
       goTo(index);
-      if (location.hash !== `#${ids[index]}`) history.pushState(null, "", `#${ids[index]}`);
+      const url = `#${ids[index]}`;
+      if (location.hash !== url) history.pushState({ olfY: scrollY }, "", url);
+      else remember();
     });
   }
-  // Any other fragment navigation (typed URL, another in-page link). Back and
-  // forward are left to the browser's scroll restoration.
-  addEventListener("hashchange", () => {
-    const index = sectionInHash();
-    if (index >= 0) goTo(index);
+
+  // Back/Forward to an entry with a remembered position: restore it after the
+  // browser's own handling, and ignore the hashchange the traversal fires.
+  let restoring = false;
+  addEventListener("popstate", (e) => {
+    const y = (e.state as { olfY?: unknown } | null)?.olfY;
+    if (typeof y !== "number") return;
+    restoring = true;
+    setTimeout(() => {
+      scrollTo({ top: y, behavior: "instant" });
+      restoring = false;
+    }, 0);
   });
+
+  // Any other fragment navigation (typed URL, another in-page link). Back and
+  // Forward to entries without a remembered position also fire hashchange,
+  // after the browser has restored that entry: leave those alone. They are
+  // recognised by the Navigation API where it exists, and otherwise because the
+  // page is not where a fresh fragment jump would have put the section.
+  let traversing = false;
+  (window as any).navigation?.addEventListener?.("navigate", (e: { navigationType: string }) => {
+    traversing = e.navigationType === "traverse";
+  });
+  addEventListener("hashchange", () => {
+    const wasTraversal = traversing;
+    traversing = false;
+    const index = sectionInHash();
+    if (restoring || index < 0 || wasTraversal || Math.abs(scrollY - nativeY(index)) > 2) return;
+    goTo(index);
+  });
+
+  // Track the page from the start, before handling the initial fragment.
+  addEventListener("scroll", update, { passive: true });
+  addEventListener("resize", () => { measure(); update(); });
+  new ResizeObserver(() => { measure(); update(); }).observe(document.body);
 
   measure();
   // A shared link such as /#good-fit: the browser jumps to the fragment
@@ -212,14 +271,9 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
   // until `load`, so re-measure each time.
   const opened = sectionInHash();
   if (opened > 0) {
-    const target = targets[opened];
-    const nativeY = () => Math.min(
-      document.documentElement.scrollHeight - innerHeight,
-      Math.max(0, target.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(target).scrollMarginTop)),
-    );
     let landed = -1;
     const reland = () => {
-      const untouched = landed < 0 || Math.abs(scrollY - landed) <= 2 || Math.abs(scrollY - nativeY()) <= 2;
+      const untouched = landed < 0 || Math.abs(scrollY - landed) <= 2 || Math.abs(scrollY - nativeY(opened)) <= 2;
       if (!untouched) return;
       measure();
       goTo(opened, "instant");
@@ -233,9 +287,6 @@ const digits = Array.from({ length: 10 }, (_, d) => d);
     }, { once: true });
   }
   update();
-  addEventListener("scroll", update, { passive: true });
-  addEventListener("resize", () => { measure(); update(); });
-  new ResizeObserver(() => { measure(); update(); }).observe(document.body);
 </script>
 
 <style>
