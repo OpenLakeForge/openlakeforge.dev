@@ -127,3 +127,12 @@ test("a slug that climbs out of the content directory fails the sync", () => {
     /unsafe slug/,
   );
 });
+
+test("an autogenerate directory that climbs out fails the sync", () => {
+  assert.throws(() => readNavigation({ sections: [{ label: "X", autogenerate: "../outside" }] }, () => []), /unsafe slug/);
+});
+
+test("a fence line with an info string inside a block is code, not a closing fence", () => {
+  const body = "```text\n```js\n[x](../AGENTS.md)\n```\n```";
+  assert.equal(rewriteLinks(body, context("docs/README.md")), body);
+});

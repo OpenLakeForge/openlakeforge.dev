@@ -16,7 +16,9 @@ function mapProse(lines, fn) {
       fence = opener[1];
       return line;
     }
-    if (opener && fence && opener[1][0] === fence[0] && opener[1].length >= fence.length) {
+    // A closing fence is the delimiter alone: ```js inside a ``` block is code.
+    const bare = opener && line.slice(opener[0].length).trim() === "";
+    if (bare && fence && opener[1][0] === fence[0] && opener[1].length >= fence.length) {
       fence = null;
       return line;
     }
@@ -199,21 +201,25 @@ export function readNavigation(navigation, listMarkdown) {
     for (const item of section.items ?? []) {
       const path = typeof item === "string" ? item : item.path;
       const slug = typeof item === "object" && item.slug ? item.slug.replace(/^\/|\/$/g, "") : defaultSlug(path);
-      // A slug becomes a file path under the content directory, so it may not
-      // climb out of it.
-      if (!/^[a-z0-9][a-z0-9/_.-]*$|^$/i.test(slug) || slug.split("/").includes("..")) {
-        throw new Error(`docs/navigation.yaml: ${path} has an unsafe slug: ${slug}`);
-      }
-      published[path] = slug;
+      published[path] = safeSlug(path, slug);
       if (typeof item === "object" && item.title) titles[path] = item.title;
       items.push({ slug: slug ? `docs/${slug}` : "docs" });
     }
     if (section.autogenerate) {
-      for (const path of listMarkdown(section.autogenerate)) published[path] = defaultSlug(path);
+      safeSlug(section.autogenerate, section.autogenerate.replace(/\/$/, ""));
+      for (const path of listMarkdown(section.autogenerate)) published[path] = safeSlug(path, defaultSlug(path));
       const directory = section.autogenerate.replace(/^docs\//, "").replace(/\/$/, "");
       items.push({ autogenerate: { directory: `docs/${directory}` } });
     }
     sidebar.push({ label: section.label, items });
   }
   return { published, titles, sidebar };
+}
+
+/** A slug becomes a file path under the content directory, so it may not climb out of it. */
+function safeSlug(path, slug) {
+  if (!/^([a-z0-9][a-z0-9/_.-]*)?$/i.test(slug) || slug.split("/").includes("..")) {
+    throw new Error(`docs/navigation.yaml: ${path} has an unsafe slug or directory: ${slug}`);
+  }
+  return slug;
 }
