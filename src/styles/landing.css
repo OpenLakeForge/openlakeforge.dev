@@ -12,6 +12,8 @@
   --water-now: color-mix(in srgb, var(--water-top), var(--water-bottom) calc(var(--dive, 0) * 100%));
   --water-now-end: color-mix(in srgb, var(--water-top), var(--water-bottom) calc(var(--dive-end, 0.1) * 100%));
 }
+/* Cards are a dark veil over the water, so they follow it down. */
+:root[data-theme="dark"] { --olf-bg-surface: rgb(3 19 48 / 0.45); }
 :root[data-theme="light"] {
   --mark-anvil: var(--brand-anvil);
   --contour-opacity: 0.18;

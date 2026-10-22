@@ -502,9 +502,11 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
   .board {
     --flap-h: 1.75rem;
     --board-gap: 0.75rem;
-    --board-housing: color-mix(in srgb, var(--water-now), black 45%);
+    /* The water itself, so the board sits in the page's colour. */
+    --board-housing: var(--water-now);
     --board-edge: color-mix(in srgb, var(--water-now), white 15%);
-    --board-tile: color-mix(in srgb, var(--water-now), black 20%);
+    --board-tile: var(--water-now);
+    --board-hinge: color-mix(in srgb, var(--water-now), black 35%);
     --board-ink: var(--abyss-50);
     --board-shadow: rgb(0 0 0 / 0.5);
     position: absolute;
@@ -553,7 +555,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     inset: 50% 0 auto;
     z-index: 2;
     height: 1px;
-    background: var(--board-housing);
+    background: var(--board-hinge, var(--board-housing));
   }
   .fold { visibility: hidden; z-index: 1; }
   .board.flipping .fold { visibility: visible; }
