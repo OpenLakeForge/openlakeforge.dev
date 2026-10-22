@@ -4,6 +4,7 @@ import starlight from "@astrojs/starlight";
 import sitemap from "@astrojs/sitemap";
 import { deepWaterTheme } from "./src/lib/code-theme.ts";
 import { repositoryUrl } from "./src/lib/nav.ts";
+import { docsRedirects } from "./src/lib/redirects.ts";
 
 // The public URL lives here only (canonical links, sitemap). Served by
 // Cloudflare from wrangler.jsonc; SITE_URL overrides it for previews.
@@ -11,6 +12,7 @@ const site = process.env.SITE_URL ?? "https://openlakeforge.dev";
 
 export default defineConfig({
   site,
+  redirects: docsRedirects,
   integrations: [
     sitemap(),
     starlight({
