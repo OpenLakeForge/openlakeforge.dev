@@ -112,3 +112,18 @@ test("a manifest without sections fails instead of publishing nothing", () => {
   assert.throws(() => readNavigation([{ label: "Get started", items: [] }], () => []), /non-empty `sections` list/);
   assert.throws(() => readNavigation({}, () => []), /non-empty `sections` list/);
 });
+
+test("the description starts after the title and skips thematic breaks", () => {
+  const page = transformPage("<!--\nGenerated; do not edit.\n-->\n\n# Matrix\n\n---\n\nVersions of PROJECT_CODE_IMAGE_REPOSITORY.\n", {
+    ...context("docs/reference/matrix.md"),
+    sha: "0123456789abcdef",
+  });
+  assert.match(page, /description: "Versions of PROJECT_CODE_IMAGE_REPOSITORY."/);
+});
+
+test("a slug that climbs out of the content directory fails the sync", () => {
+  assert.throws(
+    () => readNavigation({ sections: [{ label: "X", items: [{ path: "docs/a.md", slug: "../../pages/index" }] }] }, () => []),
+    /unsafe slug/,
+  );
+});

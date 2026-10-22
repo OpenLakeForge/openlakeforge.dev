@@ -43,20 +43,28 @@ export function extractTitle(markdown) {
     if (title === null) {
       const match = /^# (.+?)\s*#*\s*$/.exec(line);
       if (match) {
-        // A title is plain text in the sidebar and the <title>, so drop inline
-        // Markdown such as `code` and [links](...).
-        title = match[1]
-          .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
-          .replace(/`/g, "")
-          .replace(/(\*\*|__)(.+?)\1/g, "$2")
-          .replace(/(^|[^\w*])[*_]([^*_]+)[*_](?![\w*])/g, "$1$2");
+        title = plainText(match[1]);
         at = index;
       }
     }
     return line;
   });
+  // The description is read after the title: a page can open with a comment
+  // or a badge that is not its summary.
+  const afterTitle = at >= 0 ? lines.slice(at + 1).join("\n") : markdown;
   if (at >= 0) lines.splice(at, 1);
-  return { title, body: lines.join("\n").replace(/^\n+/, "") };
+  return { title, body: lines.join("\n").replace(/^\n+/, ""), afterTitle };
+}
+
+/** Inline Markdown as plain text, for titles and descriptions: links keep their
+ * text, code loses its backticks, emphasis loses its delimiters, and
+ * underscores inside words such as `PROJECT_CODE` stay. */
+function plainText(markdown) {
+  return markdown
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/`/g, "")
+    .replace(/(\*\*|__)(.+?)\1/g, "$2")
+    .replace(/(^|[^\w*])[*_]([^*_]+)[*_](?![\w*])/g, "$1$2");
 }
 
 /** T2: the first paragraph, as plain text, at most 160 characters. */
@@ -74,18 +82,13 @@ export function extractDescription(body) {
       if (paragraph.length) break;
       continue;
     }
-    if (/^(#|>|```|~~~|<|\||[-*+] |\d+\. )/.test(text)) {
+    if (/^(#|>|```|~~~|<|\||[-*+] |\d+\. )/.test(text) || /^([-*_])(\s*\1){2,}$/.test(text)) {
       if (paragraph.length) break;
       continue;
     }
     paragraph.push(text);
   }
-  const plain = paragraph
-    .join(" ")
-    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/[`*_]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  const plain = plainText(paragraph.join(" ")).replace(/\s+/g, " ").trim();
   return plain.length <= 160 ? plain : `${plain.slice(0, 157).replace(/\s+\S*$/, "")}…`;
 }
 
@@ -166,9 +169,9 @@ export function convertAlerts(body) {
 
 /** The whole page: frontmatter (T1, T2, T7), transformed body and provenance (T8). */
 export function transformPage(markdown, { sourcePath, title: titleOverride, published, repoUrl, ref, sha, assets }) {
-  const { title, body } = extractTitle(markdown);
+  const { title, body, afterTitle } = extractTitle(markdown);
   const pageTitle = titleOverride ?? title ?? posix.basename(sourcePath, ".md");
-  const description = extractDescription(body);
+  const description = extractDescription(afterTitle);
   const transformed = convertAlerts(rewriteLinks(body, { sourcePath, published, repoUrl, ref, assets }));
   const frontmatter = [
     "---",
@@ -196,6 +199,11 @@ export function readNavigation(navigation, listMarkdown) {
     for (const item of section.items ?? []) {
       const path = typeof item === "string" ? item : item.path;
       const slug = typeof item === "object" && item.slug ? item.slug.replace(/^\/|\/$/g, "") : defaultSlug(path);
+      // A slug becomes a file path under the content directory, so it may not
+      // climb out of it.
+      if (!/^[a-z0-9][a-z0-9/_.-]*$|^$/i.test(slug) || slug.split("/").includes("..")) {
+        throw new Error(`docs/navigation.yaml: ${path} has an unsafe slug: ${slug}`);
+      }
       published[path] = slug;
       if (typeof item === "object" && item.title) titles[path] = item.title;
       items.push({ slug: slug ? `docs/${slug}` : "docs" });
