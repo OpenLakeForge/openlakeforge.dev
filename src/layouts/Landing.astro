@@ -63,6 +63,59 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       addEventListener("scroll", dive, { passive: true });
       addEventListener("resize", dive);
       dive();
+
+      // The pointer is a stick trailed through the water. Every few pixels it
+      // drops a point that drifts away on both sides, across its heading; each
+      // side's points joined in order draw one arm of the V-shaped wake.
+      if (matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches) {
+        const life = 1400;
+        const canvas = document.createElement("canvas");
+        canvas.className = "wake";
+        canvas.setAttribute("aria-hidden", "true");
+        document.body.append(canvas);
+        const ctx = canvas.getContext("2d");
+        const fit = () => {
+          canvas.width = innerWidth * devicePixelRatio;
+          canvas.height = innerHeight * devicePixelRatio;
+        };
+        fit();
+        addEventListener("resize", fit);
+        const drops = [];
+        let last = null;
+        const draw = (now) => {
+          while (drops.length && now - drops[0].born > life) drops.shift();
+          ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+          ctx.clearRect(0, 0, innerWidth, innerHeight);
+          ctx.lineWidth = 1.2;
+          ctx.lineCap = "round";
+          const arm = (d, side) => {
+            const r = ((now - d.born) / life) * 70;
+            return [d.x - Math.sin(d.heading) * r * side, d.y + Math.cos(d.heading) * r * side];
+          };
+          for (let i = 1; i < drops.length; i++) {
+            const a = drops[i - 1], b = drops[i];
+            if (Math.hypot(b.x - a.x, b.y - a.y) > 80) continue; // the pointer jumped: a new wake
+            ctx.strokeStyle = b.color;
+            ctx.globalAlpha = (1 - (now - a.born) / life) * 0.5;
+            for (const side of [-1, 1]) {
+              ctx.beginPath();
+              ctx.moveTo(...arm(a, side));
+              ctx.lineTo(...arm(b, side));
+              ctx.stroke();
+            }
+          }
+          if (drops.length) requestAnimationFrame(draw);
+        };
+        addEventListener("pointermove", (e) => {
+          const x = e.clientX, y = e.clientY;
+          if (last && Math.hypot(x - last.x, y - last.y) < 8) return;
+          const heading = last ? Math.atan2(y - last.y, x - last.x) : 0;
+          last = { x, y };
+          const color = getComputedStyle(root).getPropertyValue("--olf-highlight");
+          drops.push({ x, y, heading, born: performance.now(), color });
+          if (drops.length === 1) requestAnimationFrame(draw);
+        }, { passive: true });
+      }
     </script>
   </body>
 </html>
