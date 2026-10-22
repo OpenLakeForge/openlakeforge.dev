@@ -54,7 +54,10 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
   const hero = document.querySelector<HTMLElement>(".hero")!;
   const canvas = hero.querySelector<HTMLCanvasElement>("[data-wake]")!;
   const ctx = canvas.getContext("2d")!;
-  if (matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches) {
+  // Checked again on every move and frame, so turning on reduced motion with
+  // the page open stops the wake at once.
+  const motion = matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)");
+  if (motion.matches) {
     const CELL = 4, SUB = 4; // simulation cell in CSS px, drawn pixels per cell
     const DAMPING = 0.94; // per frame: the wake's length
     const LEVEL = 0.06; // the contour height the foam line follows
@@ -176,11 +179,17 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
       }
       ctx.fill();
       ctx.restore();
-      if (cells) requestAnimationFrame(frame);
-      else { running = false; now.fill(0); before.fill(0); }
+      if (cells && motion.matches) requestAnimationFrame(frame);
+      else {
+        running = false;
+        drawn = null;
+        [now, before, image.data].forEach((a) => a.fill(0));
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
     };
 
     hero.addEventListener("pointermove", (e) => {
+      if (!motion.matches) return;
       const origin = canvas.getBoundingClientRect(), x = e.clientX - origin.x, y = e.clientY - origin.y;
       // Every cell along the path, so a fast stroke still leaves one wake.
       const steps = last ? Math.min(Math.ceil(Math.hypot(x - last.x, y - last.y) / CELL), 50) : 1;
