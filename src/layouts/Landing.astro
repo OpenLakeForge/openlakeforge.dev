@@ -66,7 +66,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 
       // The pointer is a stick trailed through the water. Every few pixels it
       // drops a point that drifts away on both sides, across its heading; each
-      // side's points joined in order draw one arm of the V-shaped wake.
+      // side's points, joined by smooth curves, draw one arm of the wake, and
+      // a bow wave arcs in front of the newest point to close the V.
       if (matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches) {
         const life = 1400;
         const canvas = document.createElement("canvas");
@@ -82,37 +83,61 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         addEventListener("resize", fit);
         const drops = [];
         let last = null;
+        let hx = 1, hy = 0; // the smoothed heading, so the arms do not jitter
+        // Opens fast near the stick, then slower, with a slight swell.
+        const radius = (d, age) => 12 + 60 * Math.sqrt(age) + 2.5 * Math.sin(age * 9 + d.born / 120);
         const draw = (now) => {
           while (drops.length && now - drops[0].born > life) drops.shift();
           ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
           ctx.clearRect(0, 0, innerWidth, innerHeight);
-          ctx.lineWidth = 1.2;
           ctx.lineCap = "round";
-          const arm = (d, side) => {
-            const r = ((now - d.born) / life) * 70;
-            return [d.x - Math.sin(d.heading) * r * side, d.y + Math.cos(d.heading) * r * side];
+          const ages = drops.map((d) => (now - d.born) / life);
+          const style = (i) => {
+            ctx.strokeStyle = drops[i].color;
+            ctx.globalAlpha = (1 - ages[i]) ** 1.5 * 0.55;
+            ctx.lineWidth = 0.8 + (1 - ages[i]);
           };
-          for (let i = 1; i < drops.length; i++) {
-            const a = drops[i - 1], b = drops[i];
-            if (Math.hypot(b.x - a.x, b.y - a.y) > 80) continue; // the pointer jumped: a new wake
-            ctx.strokeStyle = b.color;
-            ctx.globalAlpha = (1 - (now - a.born) / life) * 0.5;
-            for (const side of [-1, 1]) {
+          for (const side of [-1, 1]) {
+            const pts = drops.map((d, i) => {
+              const r = radius(d, ages[i]) * side;
+              return [d.x - d.hy * r, d.y + d.hx * r];
+            });
+            const mid = (i) => [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2];
+            for (let i = 1; i < pts.length; i++) {
+              const a = drops[i - 1], b = drops[i];
+              if (Math.hypot(b.x - a.x, b.y - a.y) > 80) continue; // the pointer jumped: a new wake
+              style(i);
               ctx.beginPath();
-              ctx.moveTo(...arm(a, side));
-              ctx.lineTo(...arm(b, side));
+              ctx.moveTo(...(i === 1 ? pts[0] : mid(i - 1)));
+              ctx.quadraticCurveTo(...pts[i], ...(i === pts.length - 1 ? pts[i] : mid(i)));
               ctx.stroke();
             }
+          }
+          const head = drops.length - 1;
+          if (head >= 0) {
+            const d = drops[head];
+            const h = Math.atan2(d.hy, d.hx);
+            style(head);
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, radius(d, ages[head]), h - Math.PI / 2, h + Math.PI / 2);
+            ctx.stroke();
           }
           if (drops.length) requestAnimationFrame(draw);
         };
         addEventListener("pointermove", (e) => {
           const x = e.clientX, y = e.clientY;
-          if (last && Math.hypot(x - last.x, y - last.y) < 8) return;
-          const heading = last ? Math.atan2(y - last.y, x - last.x) : 0;
+          if (last) {
+            const step = Math.hypot(x - last.x, y - last.y);
+            if (step < 8) return;
+            hx += ((x - last.x) / step - hx) * 0.35;
+            hy += ((y - last.y) / step - hy) * 0.35;
+            const n = Math.hypot(hx, hy) || 1;
+            hx /= n;
+            hy /= n;
+          }
           last = { x, y };
           const color = getComputedStyle(root).getPropertyValue("--olf-highlight");
-          drops.push({ x, y, heading, born: performance.now(), color });
+          drops.push({ x, y, hx, hy, born: performance.now(), color });
           if (drops.length === 1) requestAnimationFrame(draw);
         }, { passive: true });
       }
