@@ -64,82 +64,71 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       addEventListener("resize", dive);
       dive();
 
-      // The pointer is a stick trailed through the water. Every few pixels it
-      // drops a point that drifts away on both sides, across its heading; each
-      // side's points, joined by smooth curves, draw one arm of the wake, and
-      // a bow wave arcs in front of the newest point to close the V.
+      // The pointer is a stick trailed through the water: a small height-field
+      // wave simulation (the jQuery Ripples algorithm, on a 2D canvas at a
+      // quarter of the screen's resolution). The pointer pushes the surface
+      // down along its path; the waves spread, cross and fade by themselves,
+      // and crests catch the light while troughs darken.
       if (matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches) {
-        const life = 1400;
+        const cell = 4;
         const canvas = document.createElement("canvas");
         canvas.className = "wake";
         canvas.setAttribute("aria-hidden", "true");
         document.body.append(canvas);
         const ctx = canvas.getContext("2d");
+        let cols, rows, now, before, image;
         const fit = () => {
-          canvas.width = innerWidth * devicePixelRatio;
-          canvas.height = innerHeight * devicePixelRatio;
+          cols = canvas.width = Math.ceil(innerWidth / cell);
+          rows = canvas.height = Math.ceil(innerHeight / cell);
+          now = new Float32Array(cols * rows);
+          before = new Float32Array(cols * rows);
+          image = ctx.createImageData(cols, rows);
         };
         fit();
         addEventListener("resize", fit);
-        const drops = [];
-        let last = null;
-        let hx = 1, hy = 0; // the smoothed heading, so the arms do not jitter
-        // Opens fast near the stick, then slower, with a slight swell.
-        const radius = (d, age) => 12 + 60 * Math.sqrt(age) + 2.5 * Math.sin(age * 9 + d.born / 120);
-        const draw = (now) => {
-          while (drops.length && now - drops[0].born > life) drops.shift();
-          ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-          ctx.clearRect(0, 0, innerWidth, innerHeight);
-          ctx.lineCap = "round";
-          const ages = drops.map((d) => (now - d.born) / life);
-          const style = (i) => {
-            ctx.strokeStyle = drops[i].color;
-            ctx.globalAlpha = (1 - ages[i]) ** 1.5 * 0.55;
-            ctx.lineWidth = 0.8 + (1 - ages[i]);
-          };
-          for (const side of [-1, 1]) {
-            const pts = drops.map((d, i) => {
-              const r = radius(d, ages[i]) * side;
-              return [d.x - d.hy * r, d.y + d.hx * r];
-            });
-            const mid = (i) => [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2];
-            for (let i = 1; i < pts.length; i++) {
-              const a = drops[i - 1], b = drops[i];
-              if (Math.hypot(b.x - a.x, b.y - a.y) > 80) continue; // the pointer jumped: a new wake
-              style(i);
-              ctx.beginPath();
-              ctx.moveTo(...(i === 1 ? pts[0] : mid(i - 1)));
-              ctx.quadraticCurveTo(...pts[i], ...(i === pts.length - 1 ? pts[i] : mid(i)));
-              ctx.stroke();
-            }
+        let light = [255, 255, 255], running = false, last = null;
+        const push = (x, y) => {
+          const cx = Math.round(x / cell), cy = Math.round(y / cell);
+          for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+            const d2 = (dx * dx + dy * dy) / 9; // a round stick, softer at its edge
+            if (d2 < 1 && cx + dx > 0 && cx + dx < cols - 1 && cy + dy > 0 && cy + dy < rows - 1) now[(cy + dy) * cols + cx + dx] -= 0.05 * (1 - d2);
           }
-          const head = drops.length - 1;
-          if (head >= 0) {
-            const d = drops[head];
-            const h = Math.atan2(d.hy, d.hx);
-            style(head);
-            ctx.beginPath();
-            ctx.arc(d.x, d.y, radius(d, ages[head]), h - Math.PI / 2, h + Math.PI / 2);
-            ctx.stroke();
+        };
+        const frame = () => {
+          let energy = 0;
+          for (let y = 1; y < rows - 1; y++) for (let x = 1; x < cols - 1; x++) {
+            const i = y * cols + x;
+            const h = ((now[i - 1] + now[i + 1] + now[i - cols] + now[i + cols]) / 2 - before[i]) * 0.97;
+            before[i] = h;
+            energy = Math.max(energy, Math.abs(h));
           }
-          if (drops.length) requestAnimationFrame(draw);
+          [now, before] = [before, now];
+          const px = image.data;
+          for (let i = 0; i < now.length - cols - 1; i++) {
+            const slope = (now[i] + now[i + 1] - now[i + cols] - now[i + cols + 1]) * 300; // lit from above
+            const o = i * 4;
+            if (slope > 0) { px[o] = light[0]; px[o + 1] = light[1]; px[o + 2] = light[2]; }
+            else { px[o] = px[o + 1] = px[o + 2] = 0; }
+            px[o + 3] = Math.min(Math.abs(slope), 70);
+          }
+          ctx.putImageData(image, 0, 0);
+          if (energy > 0.0005) requestAnimationFrame(frame);
+          else { running = false; ctx.clearRect(0, 0, cols, rows); }
         };
         addEventListener("pointermove", (e) => {
           const x = e.clientX, y = e.clientY;
-          if (last) {
-            const step = Math.hypot(x - last.x, y - last.y);
-            if (step < 8) return;
-            hx += ((x - last.x) / step - hx) * 0.35;
-            hy += ((y - last.y) / step - hy) * 0.35;
-            const n = Math.hypot(hx, hy) || 1;
-            hx /= n;
-            hy /= n;
-          }
+          // Every cell along the path, so a fast stroke still leaves one wake.
+          const steps = last ? Math.min(Math.ceil(Math.hypot(x - last.x, y - last.y) / cell), 50) : 1;
+          for (let s = 1; s <= steps; s++) push(last ? last.x + (x - last.x) * s / steps : x, last ? last.y + (y - last.y) * s / steps : y);
           last = { x, y };
-          const color = getComputedStyle(root).getPropertyValue("--olf-highlight");
-          drops.push({ x, y, hx, hy, born: performance.now(), color });
-          if (drops.length === 1) requestAnimationFrame(draw);
+          if (!running) {
+            running = true;
+            const hex = getComputedStyle(root).getPropertyValue("--olf-highlight").trim();
+            if (/^#[0-9a-f]{6}$/i.test(hex)) light = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
+            requestAnimationFrame(frame);
+          }
         }, { passive: true });
+        addEventListener("pointerleave", () => { last = null; });
       }
     </script>
   </body>
