@@ -13,8 +13,8 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
   <svg class="contours" viewBox="0 0 1200 800" aria-hidden="true">
     <g fill="none" stroke="currentColor" transform="translate(600 380)">
       {rings.map(([s, r, o], i) => (
-        <g transform={`scale(${s}) rotate(${r})`} opacity={o}>
-          <path d={outline} stroke-width={(1.2 / s).toFixed(3)} style={`--i: ${i}`} />
+        <g transform={`scale(${s}) rotate(${r})`} opacity={o} style={`--i: ${i}`}>
+          <path d={outline} stroke-width="1.2" vector-effect="non-scaling-stroke" />
         </g>
       ))}
     </g>
@@ -65,13 +65,15 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     opacity: var(--contour-opacity);
     pointer-events: none;
   }
-  /* A slow swell rolls outward through the rings, like a ripple on the lake. */
-  .contours path { animation: swell 7s ease-in-out calc(var(--i) * 0.5s - 7s) infinite; }
-  @keyframes swell {
-    50% { transform: scale(1.04) rotate(1.5deg); }
+  /* Ripples: each ring rises at the centre, spreads outward and fades, one
+     every 2 s. With reduced motion the rings stay as still depth contours. */
+  @media (prefers-reduced-motion: no-preference) {
+    .contours g g { animation: ripple 20s linear calc(var(--i) * -2s) infinite; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .contours path { animation: none; }
+  @keyframes ripple {
+    from { transform: scale(0.3) rotate(10deg); opacity: 0; }
+    8% { opacity: 1; }
+    to { transform: scale(10) rotate(-24deg); opacity: 0; }
   }
   .content {
     position: relative;

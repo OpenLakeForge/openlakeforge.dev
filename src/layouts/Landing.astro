@@ -53,5 +53,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       <slot />
     </main>
     <Footer />
+    <script>
+      // How deep the viewport's top and bottom edges sit, 0 to 1, for --water-now.
+      const root = document.documentElement;
+      const dive = () => {
+        root.style.setProperty("--dive", (scrollY / root.scrollHeight).toFixed(4));
+        root.style.setProperty("--dive-end", ((scrollY + innerHeight) / root.scrollHeight).toFixed(4));
+      };
+      addEventListener("scroll", dive, { passive: true });
+      addEventListener("resize", dive);
+      dive();
+    </script>
   </body>
 </html>

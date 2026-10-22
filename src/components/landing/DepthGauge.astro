@@ -394,7 +394,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--olf-border-subtle);
-    background: color-mix(in srgb, var(--olf-bg-base) 70%, transparent);
+    background: linear-gradient(color-mix(in srgb, var(--water-now) 70%, transparent), color-mix(in srgb, var(--water-now-end) 70%, transparent));
     backdrop-filter: blur(6px);
   }
 
