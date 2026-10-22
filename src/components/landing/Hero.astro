@@ -55,7 +55,7 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
   const canvas = hero.querySelector<HTMLCanvasElement>("[data-wake]")!;
   const ctx = canvas.getContext("2d")!;
   if (matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches) {
-    const CELL = 4, SUB = 2; // simulation cell in CSS px, drawn pixels per cell
+    const CELL = 4, SUB = 4; // simulation cell in CSS px, drawn pixels per cell
     const DAMPING = 0.94; // per frame: the wake's length
     const LEVEL = 0.06; // the contour height the foam line follows
     // Panels the wake runs under: it is cut out where one lies, even a
@@ -113,13 +113,19 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
       return x2 < 0 ? null : { x: x1, y: y1, x2, y2 };
     };
 
-    // Smoothed height, slope and "could show anything" for the box's cells
-    // and the ring around them that the drawn pixels sample.
+    // Smoothed height, its slope and "could show anything" for the box's
+    // cells and the ring around them that the drawn pixels sample. The
+    // height takes a 3×3 Gaussian blur: the simulation's grain would
+    // otherwise ripple the lines' edges cell by cell.
     const derive = ({ x, y, x2, y2 }: Box) => {
-      for (let cy = Math.max(y - 2, 1); cy <= Math.min(y2 + 2, rows - 2); cy++) for (let cx = Math.max(x - 2, 1); cx <= Math.min(x2 + 2, cols - 2); cx++) {
+      const ya = Math.max(y - 3, 1), yb = Math.min(y2 + 3, rows - 2), xa = Math.max(x - 3, 1), xb = Math.min(x2 + 3, cols - 2);
+      for (let cy = ya; cy <= yb; cy++) for (let cx = xa; cx <= xb; cx++) {
         const i = cy * cols + cx;
-        height[i] = (4 * now[i] + now[i - 1] + now[i + 1] + now[i - cols] + now[i + cols]) / 8; // the simulation's grain would fray the lines
-        slope[i] = Math.hypot(now[i + 1] - now[i - 1], now[i + cols] - now[i - cols]) / 2;
+        height[i] = (4 * now[i] + 2 * (now[i - 1] + now[i + 1] + now[i - cols] + now[i + cols]) + now[i - cols - 1] + now[i - cols + 1] + now[i + cols - 1] + now[i + cols + 1]) / 16;
+      }
+      for (let cy = ya + 1; cy < yb; cy++) for (let cx = xa + 1; cx < xb; cx++) {
+        const i = cy * cols + cx;
+        slope[i] = Math.hypot(height[i + 1] - height[i - 1], height[i + cols] - height[i - cols]) / 2;
         active[i] = slope[i] > 0.015 || height[i] < -0.12 ? 1 : 0;
       }
     };
