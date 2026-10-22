@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import sitemap from "@astrojs/sitemap";
@@ -54,8 +55,9 @@ export default defineConfig({
           },
         },
       },
-      // Phase 3 replaces this with the sidebar built from docs/navigation.yaml.
-      sidebar: [{ label: "Style guide", items: [{ autogenerate: { directory: "style-guide" } }] }],
+      // Built from openlakeforge's docs/navigation.yaml by scripts/sync-docs.mjs,
+      // which runs before dev and build. The style guide stays reachable by URL.
+      sidebar: JSON.parse(readFileSync(new URL("./src/generated/sidebar.json", import.meta.url), "utf8")),
     }),
   ],
 });
