@@ -12,7 +12,11 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
 <section class="hero" id="surface">
   <svg class="contours" viewBox="0 0 1200 800" aria-hidden="true">
     <g fill="none" stroke="currentColor" transform="translate(600 380)">
-      {rings.map(([s, r, o]) => <path d={outline} transform={`scale(${s}) rotate(${r})`} opacity={o} stroke-width={(1.2 / s).toFixed(3)} />)}
+      {rings.map(([s, r, o], i) => (
+        <g transform={`scale(${s}) rotate(${r})`} opacity={o}>
+          <path d={outline} stroke-width={(1.2 / s).toFixed(3)} style={`--i: ${i}`} />
+        </g>
+      ))}
     </g>
   </svg>
   <div class="wrap content">
@@ -60,6 +64,14 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     color: var(--olf-highlight);
     opacity: var(--contour-opacity);
     pointer-events: none;
+  }
+  /* A slow swell rolls outward through the rings, like a ripple on the lake. */
+  .contours path { animation: swell 7s ease-in-out calc(var(--i) * 0.5s - 7s) infinite; }
+  @keyframes swell {
+    50% { transform: scale(1.04) rotate(1.5deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .contours path { animation: none; }
   }
   .content {
     position: relative;

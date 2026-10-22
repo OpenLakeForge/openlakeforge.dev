@@ -4,17 +4,23 @@
   --mark-anvil: var(--abyss-100);
   --contour-opacity: 0.22;
   --gutter: var(--olf-space-16);
+  /* The water column: lit at the surface, darkening toward the bed. */
+  --water-top: var(--abyss-850);
+  --water-bottom: #020b14;
 }
 :root[data-theme="light"] {
   --mark-anvil: var(--brand-anvil);
   --contour-opacity: 0.18;
+  --water-top: var(--abyss-50);
+  --water-bottom: var(--abyss-200);
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: var(--olf-bg-base);
+  /* Spans the whole page, so scrolling down is diving deeper. */
+  background: linear-gradient(var(--water-top), var(--olf-bg-base) 30%, var(--water-bottom));
   color: var(--olf-text-primary);
   font: var(--olf-text-body) / var(--olf-leading-body) var(--olf-font-body);
   -webkit-font-smoothing: antialiased;
