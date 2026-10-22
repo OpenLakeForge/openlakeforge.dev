@@ -99,8 +99,8 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         let light = [255, 255, 255], running = false, last = null;
         const push = (x, y) => {
           const cx = Math.round(x / cell), cy = Math.round(y / cell);
-          for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
-            const d2 = (dx * dx + dy * dy) / 9; // a round stick, softer at its edge
+          for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+            const d2 = (dx * dx + dy * dy) / 4; // a round stick, softer at its edge
             if (d2 < 1 && cx + dx > 0 && cx + dx < cols - 1 && cy + dy > 0 && cy + dy < rows - 1) now[(cy + dy) * cols + cx + dx] -= 0.05 * (1 - d2);
           }
         };
@@ -108,7 +108,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           let energy = 0;
           for (let y = 1; y < rows - 1; y++) for (let x = 1; x < cols - 1; x++) {
             const i = y * cols + x;
-            const h = ((now[i - 1] + now[i + 1] + now[i - cols] + now[i + cols]) / 2 - before[i]) * 0.97;
+            const h = ((now[i - 1] + now[i + 1] + now[i - cols] + now[i + cols]) / 2 - before[i]) * 0.94;
             before[i] = h;
             energy = Math.max(energy, Math.abs(h));
           }
@@ -120,7 +120,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
             // Distance, in cells, to the crest or trough contour (height over
             // slope), so the foam line keeps one width however steep the wave.
             const slope = Math.max(Math.hypot(now[i + 1] - now[i - 1], now[i + cols] - now[i - cols]) / 2, 0.01);
-            const foam = 1 - Math.abs((Math.abs(h) - 0.06) / slope) / 1.5;
+            // Only where the surface still slopes: a flattening wave would
+            // otherwise sit on the contour level and blot into patches.
+            const foam = (1 - Math.abs((Math.abs(h) - 0.06) / slope) / 1.1) * Math.min(Math.max((slope - 0.015) / 0.015, 0), 1);
             if (foam > 0) { px[o] = light[0]; px[o + 1] = light[1]; px[o + 2] = light[2]; px[o + 3] = foam * 255; }
             else { px[o] = 12; px[o + 1] = 46; px[o + 2] = 82; px[o + 3] = h < -0.12 ? Math.min((-0.12 - h) * 900, 90) : 0; } // lake-900 shade
           }
