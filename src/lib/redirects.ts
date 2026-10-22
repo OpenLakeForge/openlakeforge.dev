@@ -29,6 +29,9 @@ const merged: Record<string, string> = {
   "/docs/reference/source-descriptor": "/docs/reference/descriptors/#sourceyaml",
   "/docs/reference/services-and-routes": "/docs/reference/components/#service-urls",
   "/docs/architecture": "/docs/architecture/overview/",
+  // The tutorial lost its lesson-8 gap: 9 and 10 became 8 and 9.
+  "/docs/tutorial/09-add-prod-and-promote": "/docs/tutorial/08-add-prod-and-promote/",
+  "/docs/tutorial/10-deploy-to-the-cloud": "/docs/tutorial/09-deploy-to-the-cloud/",
 };
 
 const maintainerPages = [
@@ -71,7 +74,6 @@ const adrs = [
 export const docsRedirects: Record<string, string> = {
   ...merged,
   ...Object.fromEntries(maintainerPages.map((page) => [`/docs/${page}`, source(`docs/${page}.md`)])),
-  "/docs/architecture/diagrams": source("docs/architecture/diagrams/README.md"),
   "/docs/adr": source("docs/adr/README.md"),
   ...Object.fromEntries(adrs.map((adr) => [`/docs/adr/${adr}`, source(`docs/adr/${adr}.md`)])),
 };
