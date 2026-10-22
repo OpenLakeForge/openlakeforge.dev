@@ -80,6 +80,17 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     };
     new ResizeObserver(fit).observe(hero);
 
+    // The rings' colour and opacity; on white, one light blue only. Read
+    // again on every theme switch, even while the water still moves.
+    const readTheme = () => {
+      const style = getComputedStyle(hero), hex = style.getPropertyValue("--olf-highlight").trim();
+      if (/^#[0-9a-f]{6}$/i.test(hex)) color = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
+      opacity = parseFloat(style.getPropertyValue("--contour-opacity")) || opacity;
+      shade = document.documentElement.dataset.theme === "light" ? 0 : 1;
+    };
+    readTheme();
+    new MutationObserver(readTheme).observe(document.documentElement, { attributeFilter: ["data-theme"] });
+
     // A round stick, softer at its edge, pushing the surface down.
     const push = (x: number, y: number) => {
       const cx = Math.round(x / CELL), cy = Math.round(y / CELL);
@@ -171,12 +182,6 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
       last = { x, y };
       if (running) return;
       running = true;
-      // The rings' colour and opacity, read now so a theme switch follows;
-      // on white, one light blue only.
-      const style = getComputedStyle(hero), hex = style.getPropertyValue("--olf-highlight").trim();
-      if (/^#[0-9a-f]{6}$/i.test(hex)) color = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
-      opacity = parseFloat(style.getPropertyValue("--contour-opacity")) || opacity;
-      shade = document.documentElement.dataset.theme === "light" ? 0 : 1;
       requestAnimationFrame(frame);
     }, { passive: true });
     hero.addEventListener("pointerleave", () => (last = null));
