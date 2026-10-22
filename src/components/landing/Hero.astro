@@ -14,7 +14,7 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     <g fill="none" stroke="currentColor" transform="translate(600 380)">
       {rings.map(([s, r, o], i) => (
         <g transform={`scale(${s}) rotate(${r})`} opacity={o} style={`--i: ${i}`}>
-          <path d={outline} stroke-width="1.2" vector-effect="non-scaling-stroke" />
+          <path d={outline} stroke-width="2.5" vector-effect="non-scaling-stroke" />
         </g>
       ))}
     </g>
