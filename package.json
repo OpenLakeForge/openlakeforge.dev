@@ -9,8 +9,12 @@
     "node": ">=22"
   },
   "scripts": {
+    "sync-docs": "node scripts/sync-docs.mjs",
+    "predev": "node scripts/sync-docs.mjs",
     "dev": "astro dev",
+    "prebuild": "node scripts/sync-docs.mjs",
     "build": "astro build",
+    "test": "node --test \"scripts/*.test.mjs\"",
     "preview": "astro preview",
     "deploy": "wrangler deploy"
   },
@@ -24,6 +28,7 @@
     "astro": "^7.4.0"
   },
   "devDependencies": {
-    "wrangler": "4.151.2"
+    "wrangler": "4.151.2",
+    "yaml": "2.6.1"
   }
 }

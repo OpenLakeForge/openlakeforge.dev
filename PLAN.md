@@ -49,9 +49,12 @@ tells any visitor what OpenLakeForge does and why it helps them, and a
   approval (`@malon64` in `.github/CODEOWNERS`), no force-push or deletion.
   The repository admin may bypass the approval only when merging a pull
   request, never by pushing directly.
-- **Docs ref**: always the **latest released tag**, never `main`. The docs
-  restructure (Phase 4) lands in milestone **v0.5-alpha**, so the first
-  release whose docs follow the new structure is `v0.5.0-alpha.1`.
+- **Docs ref**: `main` until milestone **v0.5-alpha** is done, then the
+  **latest released tag** (`v0.5.0-alpha.1` first) by a `docs.lock` bump.
+  The restructured docs (Phase 4) are on `main` before they are in a release,
+  and no released tag has a `docs/navigation.yaml`, so syncing `main` is what
+  lets the site launch on the new structure. *(Decided 2026-10-22; replaces
+  "always the latest released tag, never `main`".)*
 - **Analytics**: **none at launch**. If page-level readership becomes useful,
   add a cookie-free tool (Umami self-hosted, or Plausible): no consent banner,
   no data sent to an ad network.
@@ -245,6 +248,28 @@ Starlight's stored preference. Still open:
 working links and theme-aware charts. The released `v0.4.0-alpha.1` docs must
 sync through `navigation.fallback.yaml` with no change to the openlakeforge
 repo, so the site does not wait for the restructure.
+
+**Status: built, syncing `main`** (see the Docs ref decision).
+`scripts/sync-docs.mjs` runs before `dev` and `build`. It sparse-clones the
+`docs.lock` ref (`OLF_DOCS_REF` overrides it; `OLF_DOCS_DIR` reads a local
+checkout instead). It writes the pages under `src/content/docs/docs/`, the
+changelog at `/changelog/`, the images under `public/docs-assets/` and the
+sidebar to `src/generated/sidebar.json`, all git-ignored.
+`scripts/docs-transform.mjs` holds T1–T4, T6–T8 as pure functions with
+`node --test` tests, which CI runs. On `main` @ `9ca37d5` it syncs 80 pages
+and 9 assets, the build has no broken internal link, and pages were checked
+rendered in both themes and at 375 px. Differences from the plan, each to add
+when it is needed:
+
+- No `navigation.fallback.yaml`: `main` has the manifest, so no tag without
+  one is ever synced.
+- T5 keeps the `<picture>` source pairs and serves images from
+  `public/docs-assets/`: charts follow the OS theme, not the site toggle, and
+  rasters are not optimised.
+- No `starlight-links-validator`: `olf check docs` already fails the docs repo
+  on a broken link or anchor before a page reaches the site.
+- The style guide is no longer in the sidebar; its pages stay at
+  `/style-guide/`.
 
 ## Phase 4: Docs restructure (in openlakeforge, milestone v0.5-alpha)
 
