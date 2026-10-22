@@ -502,9 +502,9 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
   .board {
     --flap-h: 1.75rem;
     --board-gap: 0.75rem;
-    --board-housing: var(--abyss-950);
-    --board-edge: var(--abyss-700);
-    --board-tile: var(--abyss-850);
+    --board-housing: color-mix(in srgb, var(--water-now), black 45%);
+    --board-edge: color-mix(in srgb, var(--water-now), white 15%);
+    --board-tile: color-mix(in srgb, var(--water-now), black 20%);
     --board-ink: var(--abyss-50);
     --board-shadow: rgb(0 0 0 / 0.5);
     position: absolute;

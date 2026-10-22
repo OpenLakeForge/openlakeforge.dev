@@ -4,9 +4,9 @@
   --mark-anvil: var(--abyss-100);
   --contour-opacity: 0.22;
   --gutter: var(--olf-space-16);
-  /* The water column: lit at the surface, darkening toward the bed. */
-  --water-top: var(--abyss-600);
-  --water-bottom: #020b14;
+  /* The water column: sea blue at the surface, darkening toward the bed. */
+  --water-top: #0a58a8;
+  --water-bottom: #031330;
   /* The water at the viewport's top and bottom edges (--dive, --dive-end:
      set on scroll in Landing.astro), so fixed bars match the page behind. */
   --water-now: color-mix(in srgb, var(--water-top), var(--water-bottom) calc(var(--dive, 0) * 100%));
@@ -15,8 +15,9 @@
 :root[data-theme="light"] {
   --mark-anvil: var(--brand-anvil);
   --contour-opacity: 0.18;
-  --water-top: var(--abyss-50);
-  --water-bottom: var(--abyss-200);
+  /* The light theme stays its plain base: no darkening. */
+  --water-top: var(--olf-bg-base);
+  --water-bottom: var(--olf-bg-base);
 }
 
 * { box-sizing: border-box; }
