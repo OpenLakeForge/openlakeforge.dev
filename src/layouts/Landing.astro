@@ -47,13 +47,6 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     </script>
   </head>
   <body>
-    <!-- Cel shading for the pointer's wake: alpha cut into flat levels (shade
-         and foam rim at 0.12, foam line at 0.9). -->
-    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-      <filter id="toon" color-interpolation-filters="sRGB">
-        <feComponentTransfer><feFuncA type="discrete" tableValues="0 0.12 0.9 0.9" /></feComponentTransfer>
-      </filter>
-    </svg>
     <a class="skip" href="#main">Skip to content</a>
     <Header />
     <main id="main">
@@ -72,31 +65,38 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       dive();
 
       // The pointer is a stick trailed through the water: a small height-field
-      // wave simulation (the jQuery Ripples algorithm, on a 2D canvas at a
-      // quarter of the screen's resolution). The pointer pushes the surface
-      // down along its path; the waves spread, cross and fade by themselves.
-      // Drawn like toon water (Wind Waker, Ghibli), to match the page's flat
-      // style: a foam line along each crest's and trough's contour, and a flat
-      // shade in the deep troughs. The canvas holds them soft; the #toon filter cuts them, at
-      // screen resolution, into flat shapes with crisp edges.
+      // wave simulation (the jQuery Ripples algorithm) on a grid of 4 px
+      // cells. The pointer pushes the surface down along its path; the waves
+      // spread, cross and fade by themselves. Drawn like toon water (Wind
+      // Waker, Ghibli), to match the page's flat style: a line along each
+      // crest's and trough's contour, in the hero rings' colour, and a faint
+      // flat shade in the deep troughs. The canvas is drawn at 2 px, heights
+      // interpolated between cells, so the lines stay smooth.
       if (matchMedia("(hover: hover) and (prefers-reduced-motion: no-preference)").matches) {
-        const cell = 4;
+        const cell = 4, pixel = 2, sub = cell / pixel;
         const canvas = document.createElement("canvas");
         canvas.className = "wake";
         canvas.setAttribute("aria-hidden", "true");
         document.body.append(canvas);
         const ctx = canvas.getContext("2d");
-        let cols, rows, now, before, image;
+        let cols, rows, now, before, height, slope, active, image;
         const fit = () => {
-          cols = canvas.width = Math.ceil(innerWidth / cell);
-          rows = canvas.height = Math.ceil(innerHeight / cell);
+          cols = Math.ceil(innerWidth / cell);
+          rows = Math.ceil(innerHeight / cell);
+          canvas.width = cols * sub;
+          canvas.height = rows * sub;
           now = new Float32Array(cols * rows);
           before = new Float32Array(cols * rows);
-          image = ctx.createImageData(cols, rows);
+          height = new Float32Array(cols * rows);
+          slope = new Float32Array(cols * rows);
+          active = new Uint8Array(cols * rows);
+          image = ctx.createImageData(canvas.width, canvas.height);
         };
         fit();
         addEventListener("resize", fit);
-        let light = [255, 255, 255], running = false, last = null;
+        let line = [92, 201, 255], opacity = 0.22, running = false, last = null;
+        let drawn = null; // the canvas rectangle drawn last frame, to clear
+        const covers = ".card, .chart, .terminal, table, .tile, .btn, .copy, body > header, .announcement, [data-gauge], [data-jump]";
         const push = (x, y) => {
           const cx = Math.round(x / cell), cy = Math.round(y / cell);
           for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
@@ -104,31 +104,65 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
             if (d2 < 1 && cx + dx > 0 && cx + dx < cols - 1 && cy + dy > 0 && cy + dy < rows - 1) now[(cy + dy) * cols + cx + dx] -= 0.05 * (1 - d2);
           }
         };
+        const smooth = (a, b, v) => { const t = Math.min(Math.max((v - a) / (b - a), 0), 1); return t * t * (3 - 2 * t); };
         const frame = () => {
-          let energy = 0;
+          // Only the moving water is drawn: the cells' bounding box.
+          let energy = 0, x1 = cols, y1 = rows, x2 = 0, y2 = 0;
           for (let y = 1; y < rows - 1; y++) for (let x = 1; x < cols - 1; x++) {
             const i = y * cols + x;
             const h = ((now[i - 1] + now[i + 1] + now[i - cols] + now[i + cols]) / 2 - before[i]) * 0.94;
             before[i] = h;
+            if (Math.abs(h) > 0.002) { x1 = Math.min(x1, x); x2 = Math.max(x2, x); y1 = Math.min(y1, y); y2 = Math.max(y2, y); }
             energy = Math.max(energy, Math.abs(h));
           }
           [now, before] = [before, now];
-          const px = image.data;
           for (let i = cols + 1; i < now.length - cols - 1; i++) {
             // Smoothed with its neighbours, so the simulation's grain does not fray the lines.
-            const h = (4 * now[i] + now[i - 1] + now[i + 1] + now[i - cols] + now[i + cols]) / 8, o = i * 4;
-            // Distance, in cells, to the crest or trough contour (height over
-            // slope), so the foam line keeps one width however steep the wave.
-            const slope = Math.max(Math.hypot(now[i + 1] - now[i - 1], now[i + cols] - now[i - cols]) / 2, 0.01);
-            // Only where the surface still slopes: a flattening wave would
-            // otherwise sit on the contour level and blot into patches.
-            const foam = (1 - Math.abs((Math.abs(h) - 0.06) / slope) / 1.1) * Math.min(Math.max((slope - 0.015) / 0.015, 0), 1);
-            if (foam > 0) { px[o] = light[0]; px[o + 1] = light[1]; px[o + 2] = light[2]; px[o + 3] = foam * 255; }
-            else { px[o] = 12; px[o + 1] = 46; px[o + 2] = 82; px[o + 3] = h < -0.12 ? Math.min((-0.12 - h) * 900, 90) : 0; } // lake-900 shade
+            height[i] = (4 * now[i] + now[i - 1] + now[i + 1] + now[i - cols] + now[i + cols]) / 8;
+            slope[i] = Math.hypot(now[i + 1] - now[i - 1], now[i + cols] - now[i - cols]) / 2;
+            active[i] = slope[i] > 0.015 || height[i] < -0.12 ? 1 : 0; // could show foam or shade
           }
-          ctx.putImageData(image, 0, 0);
+          const px = image.data, w = canvas.width;
+          if (drawn) for (let ry = drawn.y; ry < drawn.y2; ry++) px.fill(0, (ry * w + drawn.x) * 4, (ry * w + drawn.x2) * 4);
+          const box = x2 >= x1 ? { x: (x1 - 1) * sub, y: (y1 - 1) * sub, x2: (x2 + 2) * sub, y2: (y2 + 2) * sub } : null;
+          for (let ry = box ? box.y : 0; ry < (box ? box.y2 : 0); ry++) {
+            const fy = Math.min(Math.max((ry + 0.5) / sub - 0.5, 0), rows - 1.001), y0 = fy | 0, ty = fy - y0;
+            for (let rx = box.x; rx < box.x2; rx++) {
+              const fx = Math.min(Math.max((rx + 0.5) / sub - 0.5, 0), cols - 1.001), x0 = fx | 0, tx = fx - x0;
+              const i = y0 * cols + x0, o = (ry * w + rx) * 4;
+              if (!(active[i] | active[i + 1] | active[i + cols] | active[i + cols + 1])) continue; // calm water: stays clear
+              const mix = (a) => (a[i] * (1 - tx) + a[i + 1] * tx) * (1 - ty) + (a[i + cols] * (1 - tx) + a[i + cols + 1] * tx) * ty;
+              const h = mix(height), s = mix(slope);
+              // Distance, in cells, to the crest or trough contour (height over
+              // slope), so the line keeps one width however steep the wave;
+              // only where the surface still slopes, or a flattening wave
+              // would sit on the contour level and blot into patches.
+              const d = Math.abs((Math.abs(h) - 0.06) / Math.max(s, 0.01));
+              const foam = (1 - smooth(0.35, 0.6, d)) * smooth(0.015, 0.03, s);
+              if (foam > 0.01) { px[o] = line[0]; px[o + 1] = line[1]; px[o + 2] = line[2]; px[o + 3] = foam * opacity * 255; }
+              else { px[o] = 12; px[o + 1] = 46; px[o + 2] = 82; px[o + 3] = smooth(0.12, 0.15, -h) * opacity * 128; } // lake-900 shade
+            }
+          }
+          const dirty = [box, drawn].filter(Boolean);
+          if (dirty.length) {
+            const x = Math.min(...dirty.map((b) => b.x)), y = Math.min(...dirty.map((b) => b.y));
+            ctx.putImageData(image, 0, 0, x, y, Math.max(...dirty.map((b) => b.x2)) - x, Math.max(...dirty.map((b) => b.y2)) - y);
+          }
+          drawn = box;
+          // The wake runs under every panel: cut it out where one lies, even a
+          // translucent one, so it never shows through cards, code or bars.
+          ctx.save();
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.setTransform(1 / pixel, 0, 0, 1 / pixel, 0, 0);
+          ctx.beginPath();
+          for (const el of document.querySelectorAll(covers)) {
+            const r = el.getBoundingClientRect();
+            if (r.bottom > 0 && r.top < innerHeight && r.width) ctx.roundRect(r.x, r.y, r.width, r.height, parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0);
+          }
+          ctx.fill();
+          ctx.restore();
           if (energy > 0.0005) requestAnimationFrame(frame);
-          else { running = false; ctx.clearRect(0, 0, cols, rows); }
+          else { running = false; drawn = null; image.data.fill(0); ctx.clearRect(0, 0, canvas.width, canvas.height); }
         };
         addEventListener("pointermove", (e) => {
           const x = e.clientX, y = e.clientY;
@@ -138,10 +172,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
           last = { x, y };
           if (!running) {
             running = true;
-            // White foam on dark water; on the light theme's white, the highlight blue.
-            const hex = getComputedStyle(root).getPropertyValue("--olf-highlight").trim();
-            if (root.dataset.theme === "dark") light = [242, 247, 250];
-            else if (/^#[0-9a-f]{6}$/i.test(hex)) light = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
+            // The hero rings' colour and opacity, read now so a theme switch follows.
+            const style = getComputedStyle(root), hex = style.getPropertyValue("--olf-highlight").trim();
+            if (/^#[0-9a-f]{6}$/i.test(hex)) line = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
+            opacity = parseFloat(style.getPropertyValue("--contour-opacity")) || opacity;
             requestAnimationFrame(frame);
           }
         }, { passive: true });
