@@ -93,3 +93,22 @@ test("the navigation gives the published pages, title overrides and the sidebar"
     { label: "Decisions", items: [{ autogenerate: { directory: "docs/adr" } }] },
   ]);
 });
+
+test("titles keep underscores inside words and drop only emphasis", () => {
+  assert.equal(extractTitle("# Configure PROJECT_CODE_IMAGE_REPOSITORY\n").title, "Configure PROJECT_CODE_IMAGE_REPOSITORY");
+  assert.equal(extractTitle("# A **bold** and _quiet_ title\n").title, "A bold and quiet title");
+});
+
+test("the description skips a fenced code block before the first paragraph", () => {
+  assert.equal(extractDescription("```bash\nolf deploy\n```\n\nDeploy the platform."), "Deploy the platform.");
+});
+
+test("alert syntax inside a code block stays as written", () => {
+  const body = "```md\n> [!NOTE]\n> An example.\n```";
+  assert.equal(convertAlerts(body), body);
+});
+
+test("a manifest without sections fails instead of publishing nothing", () => {
+  assert.throws(() => readNavigation([{ label: "Get started", items: [] }], () => []), /non-empty `sections` list/);
+  assert.throws(() => readNavigation({}, () => []), /non-empty `sections` list/);
+});

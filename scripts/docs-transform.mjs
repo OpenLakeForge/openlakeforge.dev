@@ -24,6 +24,16 @@ function mapProse(lines, fn) {
   });
 }
 
+/** For each line, whether it belongs to a fenced code block, delimiters included. */
+function fencedLines(lines) {
+  const prose = new Set();
+  mapProse(lines, (line, index) => {
+    prose.add(index);
+    return line;
+  });
+  return lines.map((_, index) => !prose.has(index));
+}
+
 /** T1: the first `# ` heading outside code is the title, removed from the body. */
 export function extractTitle(markdown) {
   const lines = markdown.split("\n");
@@ -35,7 +45,11 @@ export function extractTitle(markdown) {
       if (match) {
         // A title is plain text in the sidebar and the <title>, so drop inline
         // Markdown such as `code` and [links](...).
-        title = match[1].replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[`*_]/g, "");
+        title = match[1]
+          .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+          .replace(/`/g, "")
+          .replace(/(\*\*|__)(.+?)\1/g, "$2")
+          .replace(/(^|[^\w*])[*_]([^*_]+)[*_](?![\w*])/g, "$1$2");
         at = index;
       }
     }
@@ -48,7 +62,13 @@ export function extractTitle(markdown) {
 /** T2: the first paragraph, as plain text, at most 160 characters. */
 export function extractDescription(body) {
   const paragraph = [];
-  for (const line of body.split("\n")) {
+  const lines = body.split("\n");
+  const fenced = fencedLines(lines);
+  for (const [index, line] of lines.entries()) {
+    if (fenced[index]) {
+      if (paragraph.length) break;
+      continue;
+    }
     const text = line.trim();
     if (!text) {
       if (paragraph.length) break;
@@ -127,9 +147,10 @@ export function rewriteLinks(body, context) {
 /** T6: GitHub alerts become Starlight asides. */
 export function convertAlerts(body) {
   const lines = body.split("\n");
+  const fenced = fencedLines(lines);
   const out = [];
   for (let i = 0; i < lines.length; i++) {
-    const head = /^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/.exec(lines[i]);
+    const head = !fenced[i] && /^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$/.exec(lines[i]);
     if (!head) {
       out.push(lines[i]);
       continue;
@@ -165,7 +186,12 @@ export function readNavigation(navigation, listMarkdown) {
   const published = {};
   const titles = {};
   const sidebar = [];
-  for (const section of navigation.sections ?? []) {
+  // An empty or misshapen manifest would publish nothing and wipe the docs, so
+  // it fails the build instead.
+  if (!Array.isArray(navigation?.sections) || navigation.sections.length === 0) {
+    throw new Error("docs/navigation.yaml must have a non-empty `sections` list");
+  }
+  for (const section of navigation.sections) {
     const items = [];
     for (const item of section.items ?? []) {
       const path = typeof item === "string" ? item : item.path;
