@@ -15,10 +15,10 @@
 :root[data-theme="dark"] {
   /* Cards are a dark veil over the water, so they follow it down. */
   --olf-bg-surface: rgb(3 19 48 / 0.45);
-  /* Brighter small text, for 4.5:1 on the sea-blue surface (muted, for
-     captions, keeps above 3:1). */
+  /* Brighter small text, for 4.5:1 on the sea-blue surface; muted joins
+     secondary, as no dimmer tone keeps that contrast there. */
   --olf-text-secondary: var(--abyss-200);
-  --olf-text-muted: var(--abyss-300);
+  --olf-text-muted: var(--abyss-200);
   --olf-link: var(--shallows-200);
   --eyebrow: var(--shallows-200);
 }
