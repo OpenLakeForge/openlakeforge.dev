@@ -94,7 +94,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         };
         fit();
         addEventListener("resize", fit);
-        let line = [92, 201, 255], opacity = 0.22, running = false, last = null;
+        let line = [92, 201, 255], opacity = 0.22, shade = 1, running = false, last = null;
         let drawn = null; // the canvas rectangle drawn last frame, to clear
         const covers = ".card, .chart, .terminal, table, .tile, .btn, .copy, body > header, .announcement, [data-gauge], [data-jump]";
         const push = (x, y) => {
@@ -140,7 +140,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
               const d = Math.abs((Math.abs(h) - 0.06) / Math.max(s, 0.01));
               const foam = (1 - smooth(0.35, 0.6, d)) * smooth(0.015, 0.03, s);
               if (foam > 0.01) { px[o] = line[0]; px[o + 1] = line[1]; px[o + 2] = line[2]; px[o + 3] = foam * opacity * 255; }
-              else { px[o] = 12; px[o + 1] = 46; px[o + 2] = 82; px[o + 3] = smooth(0.12, 0.15, -h) * opacity * 128; } // lake-900 shade
+              else { px[o] = 12; px[o + 1] = 46; px[o + 2] = 82; px[o + 3] = smooth(0.12, 0.15, -h) * opacity * 128 * shade; } // lake-900 shade
             }
           }
           const dirty = [box, drawn].filter(Boolean);
@@ -176,6 +176,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
             const style = getComputedStyle(root), hex = style.getPropertyValue("--olf-highlight").trim();
             if (/^#[0-9a-f]{6}$/i.test(hex)) line = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
             opacity = parseFloat(style.getPropertyValue("--contour-opacity")) || opacity;
+            shade = root.dataset.theme === "light" ? 0 : 1; // on white, one light blue only
             requestAnimationFrame(frame);
           }
         }, { passive: true });
