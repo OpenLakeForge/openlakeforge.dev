@@ -556,7 +556,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     inset: 50% 0 auto;
     z-index: 2;
     height: 1px;
-    background: var(--board-hinge, var(--board-housing));
+    background: var(--board-hinge);
   }
   .fold { visibility: hidden; z-index: 1; }
   .board.flipping .fold { visibility: visible; }

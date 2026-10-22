@@ -163,9 +163,6 @@ section[id].section { scroll-margin-top: calc(6.25rem - var(--section-pad)); }
   .section { --section-pad: var(--olf-space-20); }
   .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); }
 }
-/* The pointer's wake (Landing.astro): under the content, on the water. */
-.wake { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
-
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; }
