@@ -34,7 +34,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     </ol>
   </nav>
 
-  <div class="readout" aria-hidden="true">
+  <div class="readout" data-tone="shallow" aria-hidden="true">
     <span class="caption">Depth</span>
     <span class="value">
       <span class="roll" data-roll="tens">{digits.map((d) => <span>{d}</span>)}</span>
@@ -47,7 +47,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
        readout, like a station departure board: the old name's top half falls
        forward, then the new name's bottom half swings down. Static halves
        show the new top and the old bottom behind the two folding ones. -->
-  <div class="board" data-board data-labels={JSON.stringify(sections.map((s) => s.label))} style={`--chars: ${boardChars}`} aria-hidden="true">
+  <div class="board" data-board data-tone="shallow" data-labels={JSON.stringify(sections.map((s) => s.label))} style={`--chars: ${boardChars}`} aria-hidden="true">
     <span class="half top" data-half="top"><span></span></span>
     <span class="half bottom" data-half="bottom"><span></span></span>
     <span class="half top fold" data-half="fold-top"><span></span></span>
@@ -60,23 +60,24 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
         <span
           class:list={["tick", { mid: m % 5 === 0, major: m % metresPerSection === 0 }]}
           style={`--m: ${m}`}
+          data-tone="shallow"
           aria-hidden="true"
         />
       ))}
       <ol aria-hidden="true">
         {sections.map(({ id }, i) => (
-          <li style={`--m: ${i * metresPerSection}`}>
+          <li style={`--m: ${i * metresPerSection}`} data-tone="shallow">
             <a href={`#${id}`} data-section={id} tabindex="-1">{String(i * metresPerSection).padStart(2, "0")}</a>
           </li>
         ))}
       </ol>
     </div>
-    <span class="level" aria-hidden="true"><span class="grip"></span></span>
+    <span class="level" data-tone="shallow" aria-hidden="true"><span class="grip"></span></span>
     <span class="probe" data-probe aria-hidden="true"><span data-probe-depth>0 m</span></span>
   </div>
 </div>
 
-<details class="jump" data-jump>
+<details class="jump" data-jump data-tone="shallow">
   <summary><span class="depth" data-jump-depth>00 m</span> Sections</summary>
   <ol>
     {sections.map(({ id, label, depth }) => (
@@ -394,7 +395,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--olf-border-subtle);
-    background: linear-gradient(color-mix(in srgb, var(--water-now) 70%, transparent), color-mix(in srgb, var(--water-now-end) 70%, transparent));
+    background: var(--water-view, color-mix(in srgb, var(--water-now) 70%, transparent));
     backdrop-filter: blur(6px);
   }
 
@@ -497,8 +498,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
 
   /* The split-flap board floats in the corner below the header and beside
      the strip, the same gap (--board-gap) from both: one tile in a housing,
-     as wide as the longest name (--chars). Dark in the dark theme, pale with
-     dark ink in the light one. */
+     as wide as the longest name (--chars), in the water's colour. */
   .board {
     --flap-h: 1.75rem;
     --board-gap: 0.75rem;
@@ -526,14 +526,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     color: var(--board-ink);
     pointer-events: none;
   }
-  :global(:root[data-theme="light"]) .board {
-    --board-housing: var(--abyss-100);
-    --board-hinge: var(--abyss-100);
-    --board-edge: var(--abyss-200);
-    --board-tile: #ffffff;
-    --board-ink: var(--abyss-900);
-    --board-shadow: rgb(15 42 64 / 0.18);
-  }
+  .board[data-tone="shallow"] { --board-ink: var(--abyss-950); }
   /* Each half shows half of a full-height line of text. */
   .half {
     position: absolute;
@@ -613,7 +606,10 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     right: 0;
     top: var(--y);
     height: 1px;
-    background: var(--olf-text-primary);
+    /* Untoned, it reads on both waters as it follows the pointer: a white
+       line with a dark edge, and an opaque dark chip. */
+    background: #ffffff;
+    box-shadow: 0 1px 0 rgb(7 26 42 / 0.45);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--olf-duration-fast);

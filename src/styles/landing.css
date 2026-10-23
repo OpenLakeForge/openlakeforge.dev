@@ -4,13 +4,18 @@
   --mark-anvil: var(--abyss-100);
   --contour-opacity: 0.22;
   --gutter: var(--olf-space-16);
-  /* The water column: sea blue at the surface, darkening toward the bed. */
-  --water-top: #0a58a8;
+  /* The water column: clear and light at the surface (the hero), then a
+     thermocline in the gap under the hero (--thermo-top to --thermo-bottom,
+     set in Landing.astro) where it darkens fast, then on to the bed. Text
+     is dark above the thermocline (data-tone="shallow"), light below: no
+     tone keeps 4.5:1 across a slow fade between the two. */
+  --water-top: var(--shallows-300); /* the "Lake" of the wordmark */
+  --water-shallow: #3fbcfb;
+  --water-deep: #1c55a3; /* the deep text tokens at 5:1 or more */
   --water-bottom: #031330;
-  /* The water at the viewport's top and bottom edges (--dive, --dive-end:
-     set on scroll in Landing.astro), so fixed bars match the page behind. */
-  --water-now: color-mix(in srgb, var(--water-top), var(--water-bottom) calc(var(--dive, 0) * 100%));
-  --water-now-end: color-mix(in srgb, var(--water-top), var(--water-bottom) calc(var(--dive-end, 0.1) * 100%));
+  /* The water behind the viewport's top, and its gradient down the viewport,
+     set on scroll in Landing.astro, so the fixed bars match the page behind. */
+  --water-now: var(--water-top);
 }
 :root[data-theme="dark"] {
   /* Cards are a dark veil over the water, so they follow it down. */
@@ -22,12 +27,31 @@
   --olf-link: var(--shallows-200);
   --eyebrow: var(--shallows-200);
 }
-:root[data-theme="light"] {
+/* Shallow water: dark text, at 4.5:1 or more on the light surface blue
+   (secondary 4.9:1, links and eyebrows 5.0:1 at the hero's bottom). */
+[data-tone="shallow"] {
+  --olf-text-primary: var(--abyss-950);
+  --olf-text-secondary: var(--abyss-700);
+  --olf-text-muted: var(--abyss-700);
+  --olf-link: var(--lake-800);
+  --eyebrow: var(--lake-800);
+  --olf-highlight: var(--brand-anvil); /* display accents, large text */
+  --olf-accent: var(--brand-anvil);
+  --olf-accent-hover: var(--lake-900);
+  --olf-accent-text: #ffffff;
+  --olf-border-subtle: rgb(7 26 42 / 0.15);
+  --olf-border-default: rgb(7 26 42 / 0.3);
+  --olf-border-strong: rgb(7 26 42 / 0.5);
+  --olf-bg-raised: rgb(255 255 255 / 0.2);
+  --olf-bg-accent-subtle: rgb(255 255 255 / 0.12);
   --mark-anvil: var(--brand-anvil);
-  --contour-opacity: 0.18;
-  /* The light theme stays its plain base: no darkening. */
-  --water-top: var(--olf-bg-base);
-  --water-bottom: var(--olf-bg-base);
+  /* The logo's azure parts would vanish into the lake blue. */
+  --mark-ripple: #ffffff;
+  --wordmark-lake: #ffffff;
+  /* The rings and the pointer's wake: light catching the clear water. */
+  --ripple: #ffffff;
+  --contour-opacity: 0.6;
+  color: var(--olf-text-primary); /* inherited text, re-resolved here */
 }
 
 * { box-sizing: border-box; }
@@ -35,7 +59,20 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   /* Spans the whole page, so scrolling down is diving deeper. */
-  background: linear-gradient(var(--water-top), var(--water-bottom));
+  /* The thermocline eases in and out (smoothstep at fifths), not a straight
+     ramp; Landing.astro follows the same curve for the fixed bars. */
+  --t0: var(--thermo-top, 840px);
+  --t1: var(--thermo-bottom, 984px);
+  background: linear-gradient(
+    var(--water-top),
+    var(--water-shallow) var(--t0),
+    color-mix(in srgb, var(--water-shallow), var(--water-deep) 10.4%) calc(var(--t0) * 0.8 + var(--t1) * 0.2),
+    color-mix(in srgb, var(--water-shallow), var(--water-deep) 35.2%) calc(var(--t0) * 0.6 + var(--t1) * 0.4),
+    color-mix(in srgb, var(--water-shallow), var(--water-deep) 64.8%) calc(var(--t0) * 0.4 + var(--t1) * 0.6),
+    color-mix(in srgb, var(--water-shallow), var(--water-deep) 89.6%) calc(var(--t0) * 0.2 + var(--t1) * 0.8),
+    var(--water-deep) var(--t1),
+    var(--water-bottom)
+  );
   color: var(--olf-text-primary);
   font: var(--olf-text-body) / var(--olf-leading-body) var(--olf-font-body);
   -webkit-font-smoothing: antialiased;
@@ -134,7 +171,7 @@ section[id].section { scroll-margin-top: calc(6.25rem - var(--section-pad)); }
 .terminal .prompt { color: var(--shallows-300); user-select: none; }
 .terminal .comment { color: var(--abyss-400); }
 
-/* Charts: one image per theme, scrolled rather than shrunk on phones. */
+/* Charts: scrolled rather than shrunk on phones. */
 .chart {
   border: 1px solid var(--olf-border-default);
   border-radius: var(--olf-radius-xl);
@@ -142,8 +179,6 @@ section[id].section { scroll-margin-top: calc(6.25rem - var(--section-pad)); }
   background: var(--olf-bg-surface);
 }
 .chart img { width: 100%; height: auto; min-width: 56rem; }
-:root[data-theme="light"] .only-dark,
-:root[data-theme="dark"] .only-light { display: none; }
 
 /* Tags (Figma: Tag component) */
 .tag {

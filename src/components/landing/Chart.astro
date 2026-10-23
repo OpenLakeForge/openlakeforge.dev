@@ -1,0 +1,19 @@
+---
+/** A README chart, in its dark render (the landing is always the dark lake). */
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+}
+const { src, alt } = Astro.props;
+---
+
+<figure class="chart">
+  <Image src={src} alt={alt} loading="lazy" decoding="async" />
+</figure>
+
+<style>
+  figure { margin: 0; }
+</style>

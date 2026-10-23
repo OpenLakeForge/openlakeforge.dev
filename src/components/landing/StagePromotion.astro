@@ -1,7 +1,6 @@
 ---
-import ThemedChart from "./ThemedChart.astro";
-import dark from "../../assets/charts/stage-promotion-dark.svg";
-import light from "../../assets/charts/stage-promotion-light.svg";
+import Chart from "./Chart.astro";
+import chart from "../../assets/charts/stage-promotion-dark.svg";
 ---
 
 <section class="wrap section" id="stages">
@@ -13,9 +12,8 @@ import light from "../../assets/charts/stage-promotion-light.svg";
       unchanged in PROD. PROD never rebuilds, and no data is copied between stages.
     </p>
   </div>
-  <ThemedChart
-    dark={dark}
-    light={light}
+  <Chart
+    src={chart}
     alt="Stage promotion: a merged pull request is built once, pinned by digest, into one project revision, which is activated in the DEV namespace, tested, approved, and then activated unchanged in PROD"
   />
 </section>
