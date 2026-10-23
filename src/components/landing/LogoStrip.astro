@@ -1,5 +1,6 @@
 ---
 import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
 import { components } from "../../data/landing";
 
 // Logos copied from openlakeforge's docs/architecture/diagrams/src/overview/logos.json,
@@ -13,7 +14,7 @@ const logo = (file: string) => files[`../../assets/logos/${file}`];
   <ul>
     {components.map(({ name, file }) => (
       <li>
-        <span class="tile"><img src={logo(file).src} alt="" width="36" height="36" loading="lazy" /></span>
+        <span class="tile"><Image src={logo(file)} alt="" width={36} densities={[1, 2]} loading="lazy" /></span>
         <span class="name">{name}</span>
       </li>
     ))}

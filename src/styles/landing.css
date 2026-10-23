@@ -4,17 +4,38 @@
   --mark-anvil: var(--abyss-100);
   --contour-opacity: 0.22;
   --gutter: var(--olf-space-16);
+  /* The water column: sea blue at the surface, darkening toward the bed. */
+  --water-top: #0a58a8;
+  --water-bottom: #031330;
+  /* The water at the viewport's top and bottom edges (--dive, --dive-end:
+     set on scroll in Landing.astro), so fixed bars match the page behind. */
+  --water-now: color-mix(in srgb, var(--water-top), var(--water-bottom) calc(var(--dive, 0) * 100%));
+  --water-now-end: color-mix(in srgb, var(--water-top), var(--water-bottom) calc(var(--dive-end, 0.1) * 100%));
+}
+:root[data-theme="dark"] {
+  /* Cards are a dark veil over the water, so they follow it down. */
+  --olf-bg-surface: rgb(3 19 48 / 0.45);
+  /* Brighter small text, for 4.5:1 on the sea-blue surface; muted joins
+     secondary, as no dimmer tone keeps that contrast there. */
+  --olf-text-secondary: var(--abyss-200);
+  --olf-text-muted: var(--abyss-200);
+  --olf-link: var(--shallows-200);
+  --eyebrow: var(--shallows-200);
 }
 :root[data-theme="light"] {
   --mark-anvil: var(--brand-anvil);
   --contour-opacity: 0.18;
+  /* The light theme stays its plain base: no darkening. */
+  --water-top: var(--olf-bg-base);
+  --water-bottom: var(--olf-bg-base);
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
-  background: var(--olf-bg-base);
+  /* Spans the whole page, so scrolling down is diving deeper. */
+  background: linear-gradient(var(--water-top), var(--water-bottom));
   color: var(--olf-text-primary);
   font: var(--olf-text-body) / var(--olf-leading-body) var(--olf-font-body);
   -webkit-font-smoothing: antialiased;
@@ -44,7 +65,7 @@ section[id].section { scroll-margin-top: calc(6.25rem - var(--section-pad)); }
   font: 500 var(--olf-text-label) / 1.33 var(--olf-font-mono);
   letter-spacing: var(--olf-tracking-label);
   text-transform: uppercase;
-  color: var(--olf-highlight);
+  color: var(--eyebrow, var(--olf-highlight));
 }
 .title {
   margin: 0;
