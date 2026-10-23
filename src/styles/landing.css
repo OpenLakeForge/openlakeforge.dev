@@ -4,13 +4,19 @@
   --mark-anvil: var(--abyss-100);
   --contour-opacity: 0.22;
   --gutter: var(--olf-space-16);
-  /* The water column: sea blue at the surface, darkening toward the bed. */
-  --water-top: #0a58a8;
+  /* The water column: clear and light at the surface (the hero), then a
+     thermocline in the gap under the hero (--thermo-top to --thermo-bottom,
+     set in Landing.astro) where it darkens fast, then on to the bed. Text
+     is dark above the thermocline (data-tone="shallow"), light below: no
+     tone keeps 4.5:1 across a slow fade between the two. */
+  --water-top: #3e93fa;
+  --water-shallow: #3b8df0;
+  --water-deep: #2c6dbd;
   --water-bottom: #031330;
-  /* The water at the viewport's top and bottom edges (--dive, --dive-end:
-     set on scroll in Landing.astro), so fixed bars match the page behind. */
-  --water-now: color-mix(in srgb, var(--water-top), var(--water-bottom) calc(var(--dive, 0) * 100%));
-  --water-now-end: color-mix(in srgb, var(--water-top), var(--water-bottom) calc(var(--dive-end, 0.1) * 100%));
+  /* The water behind the viewport's top and bottom edges, set on scroll in
+     Landing.astro, so the fixed bars match the page behind them. */
+  --water-now: var(--water-top);
+  --water-now-end: var(--water-top);
 }
 :root[data-theme="dark"] {
   /* Cards are a dark veil over the water, so they follow it down. */
@@ -22,11 +28,35 @@
   --olf-link: var(--shallows-200);
   --eyebrow: var(--shallows-200);
 }
+/* Shallow water: dark text, at 4.5:1 or more on the light surface blue. */
+:root[data-theme="dark"] [data-tone="shallow"] {
+  --olf-text-primary: var(--abyss-950);
+  --olf-text-secondary: var(--abyss-900);
+  --olf-text-muted: var(--abyss-900);
+  --olf-link: var(--abyss-900);
+  --eyebrow: var(--abyss-900);
+  --olf-highlight: var(--brand-anvil); /* display accents, large text */
+  --olf-accent: var(--brand-anvil);
+  --olf-accent-hover: var(--lake-900);
+  --olf-accent-text: #ffffff;
+  --olf-border-subtle: rgb(7 26 42 / 0.15);
+  --olf-border-default: rgb(7 26 42 / 0.3);
+  --olf-border-strong: rgb(7 26 42 / 0.5);
+  --olf-bg-raised: rgb(255 255 255 / 0.2);
+  --olf-bg-accent-subtle: rgb(255 255 255 / 0.12);
+  --mark-anvil: var(--brand-anvil);
+  /* The rings and the pointer's wake: light catching the clear water. */
+  --ripple: #ffffff;
+  --contour-opacity: 0.3;
+  color: var(--olf-text-primary); /* inherited text, re-resolved here */
+}
 :root[data-theme="light"] {
   --mark-anvil: var(--brand-anvil);
   --contour-opacity: 0.18;
   /* The light theme stays its plain base: no darkening. */
   --water-top: var(--olf-bg-base);
+  --water-shallow: var(--olf-bg-base);
+  --water-deep: var(--olf-bg-base);
   --water-bottom: var(--olf-bg-base);
 }
 
@@ -35,7 +65,7 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   /* Spans the whole page, so scrolling down is diving deeper. */
-  background: linear-gradient(var(--water-top), var(--water-bottom));
+  background: linear-gradient(var(--water-top), var(--water-shallow) var(--thermo-top, 840px), var(--water-deep) var(--thermo-bottom, 920px), var(--water-bottom));
   color: var(--olf-text-primary);
   font: var(--olf-text-body) / var(--olf-leading-body) var(--olf-font-body);
   -webkit-font-smoothing: antialiased;

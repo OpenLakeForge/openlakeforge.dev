@@ -9,7 +9,7 @@ const rings = [[0.6, 8, 0.9], [1.1, 4, 0.8], [1.7, -2, 0.7], [2.4, -7, 0.6], [3.
 const clipboard = installCommands.map((c) => c.command).join("\n");
 ---
 
-<section class="hero" id="surface">
+<section class="hero" id="surface" data-tone="shallow">
   <canvas class="wake" data-wake aria-hidden="true"></canvas>
   <svg class="contours" viewBox="0 0 1200 800" aria-hidden="true">
     <g fill="none" stroke="currentColor" transform="translate(600 380)">
@@ -86,7 +86,7 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     // The rings' colour and opacity; on white, one light blue only. Read
     // again on every theme switch, even while the water still moves.
     const readTheme = () => {
-      const style = getComputedStyle(hero), hex = style.getPropertyValue("--olf-highlight").trim();
+      const style = getComputedStyle(hero), hex = (style.getPropertyValue("--ripple") || style.getPropertyValue("--olf-highlight")).trim();
       if (/^#[0-9a-f]{6}$/i.test(hex)) color = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
       opacity = parseFloat(style.getPropertyValue("--contour-opacity")) || opacity;
       shade = document.documentElement.dataset.theme === "light" ? 0 : 1;
@@ -223,7 +223,7 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     width: 112rem;
     max-width: none;
     transform: translateX(-50%);
-    color: var(--olf-highlight);
+    color: var(--ripple, var(--olf-highlight));
     opacity: var(--contour-opacity);
     pointer-events: none;
   }

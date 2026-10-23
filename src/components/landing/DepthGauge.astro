@@ -526,6 +526,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     color: var(--board-ink);
     pointer-events: none;
   }
+  :global(:root[data-theme="dark"] [data-tone="shallow"]) .board { --board-ink: var(--abyss-950); }
   :global(:root[data-theme="light"]) .board {
     --board-housing: var(--abyss-100);
     --board-hinge: var(--abyss-100);

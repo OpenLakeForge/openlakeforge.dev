@@ -54,15 +54,41 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     </main>
     <Footer />
     <script>
-      // How deep the viewport's top and bottom edges sit, 0 to 1, for --water-now.
+      // The water down the page (landing.css): where the thermocline sits,
+      // just under the hero, and the colour behind the viewport's top and
+      // bottom edges, for the fixed bars. Those bars take the shallow tone
+      // while their middle is above the thermocline's.
       const root = document.documentElement;
+      const hero = document.querySelector<HTMLElement>(".hero");
+      const header = document.querySelector<HTMLElement>("body > header")!;
+      const bars = [...document.querySelectorAll<HTMLElement>("body > header, [data-gauge], [data-jump]")];
+      let stops: [number, number[]][] = [];
+      const rgb = (hex: string) => (/^#[0-9a-f]{6}$/i.test(hex) ? [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16)) : [0, 0, 0]);
+      const colorAt = (y: number) => {
+        let i = 1;
+        while (i < stops.length - 1 && y > stops[i][0]) i++;
+        const [y0, a] = stops[i - 1], [y1, b] = stops[i], t = Math.min(Math.max((y - y0) / (y1 - y0 || 1), 0), 1);
+        return `rgb(${a.map((v, k) => Math.round(v + (b[k] - v) * t)).join(" ")})`;
+      };
       const dive = () => {
-        root.style.setProperty("--dive", (scrollY / root.scrollHeight).toFixed(4));
-        root.style.setProperty("--dive-end", ((scrollY + innerHeight) / root.scrollHeight).toFixed(4));
+        root.style.setProperty("--water-now", colorAt(scrollY));
+        root.style.setProperty("--water-now-end", colorAt(scrollY + innerHeight));
+        const r = header.getBoundingClientRect(), shallow = r.top + r.height / 2 + scrollY < (stops[1][0] + stops[2][0]) / 2;
+        for (const bar of bars) bar.dataset.tone = shallow ? "shallow" : "deep";
+      };
+      const measure = () => {
+        const style = getComputedStyle(root), heroBottom = hero ? hero.getBoundingClientRect().bottom + scrollY : 0;
+        const top = heroBottom - 24, bottom = heroBottom + 56; // inside the gap before the next section's text
+        root.style.setProperty("--thermo-top", `${top}px`);
+        root.style.setProperty("--thermo-bottom", `${bottom}px`);
+        stops = ([[0, "--water-top"], [top, "--water-shallow"], [bottom, "--water-deep"], [root.scrollHeight, "--water-bottom"]] as const)
+          .map(([y, name]) => [y, rgb(style.getPropertyValue(name).trim())]);
+        dive();
       };
       addEventListener("scroll", dive, { passive: true });
-      addEventListener("resize", dive);
-      dive();
+      new ResizeObserver(measure).observe(document.body);
+      new MutationObserver(measure).observe(root, { attributeFilter: ["data-theme"] });
+      measure();
     </script>
   </body>
 </html>
