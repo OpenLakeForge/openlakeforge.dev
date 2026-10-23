@@ -11,7 +11,7 @@
      tone keeps 4.5:1 across a slow fade between the two. */
   --water-top: var(--shallows-300); /* the "Lake" of the wordmark */
   --water-shallow: #3fbcfb;
-  --water-deep: #2c6dbd;
+  --water-deep: #1c55a3; /* the deep text tokens at 5:1 or more */
   --water-bottom: #031330;
   /* The water behind the viewport's top, and its gradient down the viewport,
      set on scroll in Landing.astro, so the fixed bars match the page behind. */

@@ -78,17 +78,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         return `linear-gradient(${[scrollY, ...ys, scrollY + innerHeight].map((y) => `${colorAt(y, 0.7)} ${Math.round(y - scrollY)}px`).join(", ")})`;
       };
       const dive = () => {
-        root.style.setProperty("--water-now", colorAt(scrollY));
-        root.style.setProperty("--water-view", viewGradient());
         // Off screen, the thermocline gives every control one tone. On screen,
-        // read every position first, then write: interleaved, each write would
-        // force a fresh layout for the next read.
+        // read every position first, then write everything: a write before a
+        // read would force a fresh style and layout pass for it.
         const middle = (stops[1][0] + stops[2][0]) / 2 - scrollY;
         const tone = (y: number) => (y < middle ? "shallow" : "deep");
         const tones = middle < 0 || middle > innerHeight
           ? placed.map(() => tone(0))
           : placed.map((el) => { const r = el.getBoundingClientRect(); return tone(r.top + r.height / 2); });
         const set = (el: HTMLElement, t: string) => { if (el.dataset.tone !== t) el.dataset.tone = t; };
+        root.style.setProperty("--water-now", colorAt(scrollY));
+        root.style.setProperty("--water-view", viewGradient());
         placed.forEach((el, i) => set(el, tones[i]));
         for (const el of painted) set(el, tone(0));
       };
