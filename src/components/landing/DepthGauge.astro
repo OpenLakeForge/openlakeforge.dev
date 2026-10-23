@@ -525,7 +525,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     color: var(--board-ink);
     pointer-events: none;
   }
-  :global([data-tone="shallow"]) .board { --board-ink: var(--abyss-950); }
+  .board[data-tone="shallow"] { --board-ink: var(--abyss-950); }
   /* Each half shows half of a full-height line of text. */
   .half {
     position: absolute;
