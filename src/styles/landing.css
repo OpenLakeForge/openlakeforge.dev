@@ -9,8 +9,8 @@
      set in Landing.astro) where it darkens fast, then on to the bed. Text
      is dark above the thermocline (data-tone="shallow"), light below: no
      tone keeps 4.5:1 across a slow fade between the two. */
-  --water-top: #3e93fa;
-  --water-shallow: #3b8df0;
+  --water-top: #a9dcfb; /* a lake's surface, the sky on it */
+  --water-shallow: #86c5f4;
   --water-deep: #2c6dbd;
   --water-bottom: #031330;
   /* The water behind the viewport's top and bottom edges, set on scroll in
@@ -28,13 +28,14 @@
   --olf-link: var(--shallows-200);
   --eyebrow: var(--shallows-200);
 }
-/* Shallow water: dark text, at 4.5:1 or more on the light surface blue. */
+/* Shallow water: dark text, at 4.5:1 or more on the light surface blue
+   (secondary 5.9:1, links and eyebrows 6.6:1 at the hero's bottom). */
 :root[data-theme="dark"] [data-tone="shallow"] {
   --olf-text-primary: var(--abyss-950);
-  --olf-text-secondary: var(--abyss-900);
-  --olf-text-muted: var(--abyss-900);
-  --olf-link: var(--abyss-900);
-  --eyebrow: var(--abyss-900);
+  --olf-text-secondary: var(--abyss-700);
+  --olf-text-muted: var(--abyss-700);
+  --olf-link: var(--lake-800);
+  --eyebrow: var(--lake-800);
   --olf-highlight: var(--brand-anvil); /* display accents, large text */
   --olf-accent: var(--brand-anvil);
   --olf-accent-hover: var(--lake-900);
@@ -47,7 +48,7 @@
   --mark-anvil: var(--brand-anvil);
   /* The rings and the pointer's wake: light catching the clear water. */
   --ripple: #ffffff;
-  --contour-opacity: 0.3;
+  --contour-opacity: 0.6;
   color: var(--olf-text-primary); /* inherited text, re-resolved here */
 }
 :root[data-theme="light"] {
