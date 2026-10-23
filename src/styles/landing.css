@@ -9,8 +9,8 @@
      set in Landing.astro) where it darkens fast, then on to the bed. Text
      is dark above the thermocline (data-tone="shallow"), light below: no
      tone keeps 4.5:1 across a slow fade between the two. */
-  --water-top: #8ee0f8; /* a clear lake's turquoise surface */
-  --water-shallow: #62c6ee;
+  --water-top: var(--shallows-300); /* the "Lake" of the wordmark */
+  --water-shallow: #3fbcfb;
   --water-deep: #2c6dbd;
   --water-bottom: #031330;
   /* The water behind the viewport's top and bottom edges, set on scroll in
@@ -29,7 +29,7 @@
   --eyebrow: var(--shallows-200);
 }
 /* Shallow water: dark text, at 4.5:1 or more on the light surface blue
-   (secondary 5.4:1, links and eyebrows 5.5:1 at the hero's bottom). */
+   (secondary 4.9:1, links and eyebrows 5.0:1 at the hero's bottom). */
 :root[data-theme="dark"] [data-tone="shallow"] {
   --olf-text-primary: var(--abyss-950);
   --olf-text-secondary: var(--abyss-700);
