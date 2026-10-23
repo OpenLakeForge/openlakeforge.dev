@@ -73,7 +73,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
       </ol>
     </div>
     <span class="level" data-tone="shallow" aria-hidden="true"><span class="grip"></span></span>
-    <span class="probe" data-probe data-tone="shallow" aria-hidden="true"><span data-probe-depth>0 m</span></span>
+    <span class="probe" data-probe aria-hidden="true"><span data-probe-depth>0 m</span></span>
   </div>
 </div>
 
@@ -395,7 +395,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--olf-border-subtle);
-    background: linear-gradient(color-mix(in srgb, var(--water-now) 70%, transparent), color-mix(in srgb, var(--water-now-end) 70%, transparent));
+    background: var(--water-view, color-mix(in srgb, var(--water-now) 70%, transparent));
     backdrop-filter: blur(6px);
   }
 
@@ -606,7 +606,10 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     right: 0;
     top: var(--y);
     height: 1px;
-    background: var(--olf-text-primary);
+    /* Untoned, it reads on both waters as it follows the pointer: a white
+       line with a dark edge, and an opaque dark chip. */
+    background: #ffffff;
+    box-shadow: 0 1px 0 rgb(7 26 42 / 0.45);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--olf-duration-fast);

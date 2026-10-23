@@ -13,10 +13,9 @@
   --water-shallow: #3fbcfb;
   --water-deep: #2c6dbd;
   --water-bottom: #031330;
-  /* The water behind the viewport's top and bottom edges, set on scroll in
-     Landing.astro, so the fixed bars match the page behind them. */
+  /* The water behind the viewport's top, and its gradient down the viewport,
+     set on scroll in Landing.astro, so the fixed bars match the page behind. */
   --water-now: var(--water-top);
-  --water-now-end: var(--water-top);
 }
 :root[data-theme="dark"] {
   /* Cards are a dark veil over the water, so they follow it down. */
