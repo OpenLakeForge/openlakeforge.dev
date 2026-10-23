@@ -48,13 +48,17 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       // The water down the page (landing.css): where the thermocline sits,
       // just under the hero, and the colour behind the viewport's top and
       // bottom edges, for the fixed bars. Each fixed control takes the shallow
-      // tone while its own middle is above the thermocline's: the gauge runs
-      // the viewport's height and no colour reads on both waters, so its
-      // readout, board, level and every tick and label are toned apart.
+      // tone while the water behind it is above the thermocline's middle: no
+      // colour reads on both waters. The header and the board are painted
+      // with --water-now, the water at the viewport's top, so they follow
+      // that; the gauge runs the viewport's height, so its readout and every
+      // tick and label follow their own position. The markup starts them all
+      // shallow, right at the surface and without JavaScript.
       const root = document.documentElement;
       const hero = document.querySelector<HTMLElement>(".hero");
-      const controls = [...document.querySelectorAll<HTMLElement>(
-        "body > header, [data-gauge] .readout, [data-board], [data-jump], [data-window] li, [data-window] .tick, [data-window] .level, [data-probe]",
+      const painted = [...document.querySelectorAll<HTMLElement>("body > header, [data-board]")];
+      const placed = [...document.querySelectorAll<HTMLElement>(
+        "[data-gauge] .readout, [data-jump], [data-window] li, [data-window] .tick, [data-window] .level, [data-probe]",
       )];
       let stops: [number, number[]][] = [];
       const rgb = (hex: string) => (/^#[0-9a-f]{6}$/i.test(hex) ? [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16)) : [0, 0, 0]);
@@ -73,10 +77,13 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         // read every position first, then write: interleaved, each write would
         // force a fresh layout for the next read.
         const middle = (stops[1][0] + stops[2][0]) / 2 - scrollY;
+        const tone = (y: number) => (y < middle ? "shallow" : "deep");
         const tones = middle < 0 || middle > innerHeight
-          ? controls.map(() => (middle < 0 ? "deep" : "shallow"))
-          : controls.map((el) => { const r = el.getBoundingClientRect(); return r.top + r.height / 2 < middle ? "shallow" : "deep"; });
-        controls.forEach((el, i) => { if (el.dataset.tone !== tones[i]) el.dataset.tone = tones[i]; });
+          ? placed.map(() => tone(0))
+          : placed.map((el) => { const r = el.getBoundingClientRect(); return tone(r.top + r.height / 2); });
+        const set = (el: HTMLElement, t: string) => { if (el.dataset.tone !== t) el.dataset.tone = t; };
+        placed.forEach((el, i) => set(el, tones[i]));
+        for (const el of painted) set(el, tone(0));
       };
       const measure = () => {
         const style = getComputedStyle(root), heroBottom = hero ? hero.getBoundingClientRect().bottom + scrollY : 0;
@@ -88,6 +95,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         dive();
       };
       addEventListener("scroll", dive, { passive: true });
+      addEventListener("resize", measure); // a height-only resize leaves the body's size alone
       new ResizeObserver(measure).observe(document.body);
       measure();
     </script>
