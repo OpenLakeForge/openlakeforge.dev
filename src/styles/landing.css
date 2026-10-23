@@ -46,6 +46,9 @@
   --olf-bg-raised: rgb(255 255 255 / 0.2);
   --olf-bg-accent-subtle: rgb(255 255 255 / 0.12);
   --mark-anvil: var(--brand-anvil);
+  /* The logo's azure parts would vanish into the lake blue. */
+  --mark-ripple: #ffffff;
+  --wordmark-lake: #ffffff;
   /* The rings and the pointer's wake: light catching the clear water. */
   --ripple: #ffffff;
   --contour-opacity: 0.6;
@@ -66,7 +69,20 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   /* Spans the whole page, so scrolling down is diving deeper. */
-  background: linear-gradient(var(--water-top), var(--water-shallow) var(--thermo-top, 840px), var(--water-deep) var(--thermo-bottom, 920px), var(--water-bottom));
+  /* The thermocline eases in and out (smoothstep at fifths), not a straight
+     ramp; Landing.astro follows the same curve for the fixed bars. */
+  --t0: var(--thermo-top, 840px);
+  --t1: var(--thermo-bottom, 984px);
+  background: linear-gradient(
+    var(--water-top),
+    var(--water-shallow) var(--t0),
+    color-mix(in srgb, var(--water-shallow), var(--water-deep) 10.4%) calc(var(--t0) * 0.8 + var(--t1) * 0.2),
+    color-mix(in srgb, var(--water-shallow), var(--water-deep) 35.2%) calc(var(--t0) * 0.6 + var(--t1) * 0.4),
+    color-mix(in srgb, var(--water-shallow), var(--water-deep) 64.8%) calc(var(--t0) * 0.4 + var(--t1) * 0.6),
+    color-mix(in srgb, var(--water-shallow), var(--water-deep) 89.6%) calc(var(--t0) * 0.2 + var(--t1) * 0.8),
+    var(--water-deep) var(--t1),
+    var(--water-bottom)
+  );
   color: var(--olf-text-primary);
   font: var(--olf-text-body) / var(--olf-leading-body) var(--olf-font-body);
   -webkit-font-smoothing: antialiased;
