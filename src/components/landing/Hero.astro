@@ -10,16 +10,19 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
 ---
 
 <section class="hero" id="surface" data-tone="shallow">
-  <canvas class="wake" data-wake aria-hidden="true"></canvas>
-  <svg class="contours" viewBox="0 0 1200 800" aria-hidden="true">
-    <g fill="none" stroke="currentColor" transform="translate(600 380)">
-      {rings.map(([s, r, o], i) => (
-        <g transform={`scale(${s}) rotate(${r})`} opacity={o} style={`--i: ${i}`}>
-          <path d={outline} stroke-width="2.5" vector-effect="non-scaling-stroke" />
-        </g>
-      ))}
-    </g>
-  </svg>
+  <!-- The rings and the pointer's wake, fading out toward the hero's bottom. -->
+  <div class="water" aria-hidden="true">
+    <canvas class="wake" data-wake aria-hidden="true"></canvas>
+    <svg class="contours" viewBox="0 0 1200 800" aria-hidden="true">
+      <g fill="none" stroke="currentColor" transform="translate(600 380)">
+        {rings.map(([s, r, o], i) => (
+          <g transform={`scale(${s}) rotate(${r})`} opacity={o} style={`--i: ${i}`}>
+            <path d={outline} stroke-width="2.5" vector-effect="non-scaling-stroke" />
+          </g>
+        ))}
+      </g>
+    </svg>
+  </div>
   <div class="wrap content">
     <Mark size="5.5rem" />
     <p class="eyebrow">Open-source lakehouse · Apache-2.0 · Alpha</p>
@@ -213,7 +216,8 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
 
 <style>
   .hero { position: relative; overflow: hidden; }
-  .wake { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .water { position: absolute; inset: 0; pointer-events: none; mask-image: linear-gradient(#000 60%, transparent); }
+  .wake { position: absolute; inset: 0; width: 100%; height: 100%; }
   .contours {
     position: absolute;
     left: 50%;

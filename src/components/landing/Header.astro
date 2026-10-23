@@ -4,7 +4,7 @@ import { headerLinks, repositoryUrl } from "../../lib/nav";
 import { release } from "../../data/landing";
 ---
 
-<div class="announcement" data-tone="shallow">
+<div class="announcement">
   <p>
     <span class="version">v{release.version}</span>
     <span class="note">{release.note}</span>
@@ -45,6 +45,8 @@ import { release } from "../../data/landing";
     background: linear-gradient(var(--olf-bg-accent-subtle), var(--olf-bg-accent-subtle)), var(--water-top);
     border-bottom: 1px solid var(--olf-border-subtle);
   }
+  /* On the dark theme, the logo's navy: it breaks from the light surface water. */
+  :global(:root[data-theme="dark"]) .announcement { background: var(--brand-anvil); }
   /* The page keeps a 4rem column free for the gauge here (DepthGauge.astro):
      the banner still spans the whole width. */
   @media (width > 64rem) and (height >= 30rem) {
