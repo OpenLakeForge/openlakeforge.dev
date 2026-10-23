@@ -1,8 +1,7 @@
 ---
-import ThemedChart from "./ThemedChart.astro";
+import Chart from "./Chart.astro";
 import { layers } from "../../data/landing";
-import dark from "../../assets/charts/architecture-local-dark.svg";
-import light from "../../assets/charts/architecture-local-light.svg";
+import chart from "../../assets/charts/architecture-local-dark.svg";
 ---
 
 <section class="wrap section" id="how-it-works">
@@ -14,9 +13,8 @@ import light from "../../assets/charts/architecture-local-light.svg";
       sit the catalog, the query engine and, when you want them, governance and dashboards.
     </p>
   </div>
-  <ThemedChart
-    dark={dark}
-    light={light}
+  <Chart
+    src={chart}
     alt="OpenLakeForge architecture: Dagster orchestrates dlt, Floe and dbt-trino over Bronze, Silver and Gold Iceberg tables in object storage, queried by Trino and Superset and governed by OpenMetadata"
   />
   <div class="grid grid-3 layers">

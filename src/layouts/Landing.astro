@@ -1,8 +1,8 @@
 ---
 /**
  * Layout of the presentation page. It is not a Starlight page, but it shares
- * Starlight's theme: the same tokens, and the same stored preference
- * (localStorage "starlight-theme"), so landing and docs never disagree.
+ * Starlight's tokens. It has one look only, the lake (landing.css), built on
+ * the dark theme: no theme switch here; the docs keep theirs.
  */
 import "@fontsource-variable/fraunces/full.css";
 import "@fontsource-variable/fraunces/full-italic.css";
@@ -27,7 +27,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark light" />
+    <meta name="color-scheme" content="dark" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -36,15 +36,6 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
-    <script is:inline>
-      // Before first paint: the stored choice, else the OS preference.
-      try {
-        const stored = localStorage.getItem("starlight-theme");
-        const theme = stored === "light" || stored === "dark" ? stored
-          : matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-        document.documentElement.dataset.theme = theme;
-      } catch {}
-    </script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -89,7 +80,6 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       };
       addEventListener("scroll", dive, { passive: true });
       new ResizeObserver(measure).observe(document.body);
-      new MutationObserver(measure).observe(root, { attributeFilter: ["data-theme"] });
       measure();
     </script>
   </body>

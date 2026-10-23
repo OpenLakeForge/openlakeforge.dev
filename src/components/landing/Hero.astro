@@ -86,15 +86,10 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     };
     new ResizeObserver(fit).observe(hero);
 
-    // The rings' colour and opacity, read again on every theme switch, even
-    // while the water still moves.
-    const readTheme = () => {
-      const style = getComputedStyle(hero), hex = (style.getPropertyValue("--ripple") || style.getPropertyValue("--olf-highlight")).trim();
-      if (/^#[0-9a-f]{6}$/i.test(hex)) color = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
-      opacity = parseFloat(style.getPropertyValue("--contour-opacity")) || opacity;
-    };
-    readTheme();
-    new MutationObserver(readTheme).observe(document.documentElement, { attributeFilter: ["data-theme"] });
+    // The rings' colour and opacity.
+    const style = getComputedStyle(hero), hex = style.getPropertyValue("--ripple").trim();
+    if (/^#[0-9a-f]{6}$/i.test(hex)) color = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16));
+    opacity = parseFloat(style.getPropertyValue("--contour-opacity")) || opacity;
 
     // A round stick, softer at its edge, pushing the surface down.
     const push = (x: number, y: number) => {
@@ -225,7 +220,7 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     width: 112rem;
     max-width: none;
     transform: translateX(-50%);
-    color: var(--ripple, var(--olf-highlight));
+    color: var(--ripple);
     opacity: var(--contour-opacity);
     pointer-events: none;
   }

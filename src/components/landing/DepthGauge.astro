@@ -497,8 +497,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
 
   /* The split-flap board floats in the corner below the header and beside
      the strip, the same gap (--board-gap) from both: one tile in a housing,
-     as wide as the longest name (--chars). Dark in the dark theme, pale with
-     dark ink in the light one. */
+     as wide as the longest name (--chars), in the water's colour. */
   .board {
     --flap-h: 1.75rem;
     --board-gap: 0.75rem;
@@ -526,15 +525,7 @@ const boardChars = Math.max(...sections.map((s) => s.label.length));
     color: var(--board-ink);
     pointer-events: none;
   }
-  :global(:root[data-theme="dark"] [data-tone="shallow"]) .board { --board-ink: var(--abyss-950); }
-  :global(:root[data-theme="light"]) .board {
-    --board-housing: var(--abyss-100);
-    --board-hinge: var(--abyss-100);
-    --board-edge: var(--abyss-200);
-    --board-tile: #ffffff;
-    --board-ink: var(--abyss-900);
-    --board-shadow: rgb(15 42 64 / 0.18);
-  }
+  :global([data-tone="shallow"]) .board { --board-ink: var(--abyss-950); }
   /* Each half shows half of a full-height line of text. */
   .half {
     position: absolute;

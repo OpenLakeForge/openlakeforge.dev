@@ -30,7 +30,7 @@
 }
 /* Shallow water: dark text, at 4.5:1 or more on the light surface blue
    (secondary 4.9:1, links and eyebrows 5.0:1 at the hero's bottom). */
-:root[data-theme="dark"] [data-tone="shallow"] {
+[data-tone="shallow"] {
   --olf-text-primary: var(--abyss-950);
   --olf-text-secondary: var(--abyss-700);
   --olf-text-muted: var(--abyss-700);
@@ -53,15 +53,6 @@
   --ripple: #ffffff;
   --contour-opacity: 0.6;
   color: var(--olf-text-primary); /* inherited text, re-resolved here */
-}
-:root[data-theme="light"] {
-  --mark-anvil: var(--brand-anvil);
-  --contour-opacity: 0.18;
-  /* The light theme stays its plain base: no darkening. */
-  --water-top: var(--olf-bg-base);
-  --water-shallow: var(--olf-bg-base);
-  --water-deep: var(--olf-bg-base);
-  --water-bottom: var(--olf-bg-base);
 }
 
 * { box-sizing: border-box; }
@@ -181,7 +172,7 @@ section[id].section { scroll-margin-top: calc(6.25rem - var(--section-pad)); }
 .terminal .prompt { color: var(--shallows-300); user-select: none; }
 .terminal .comment { color: var(--abyss-400); }
 
-/* Charts: one image per theme, scrolled rather than shrunk on phones. */
+/* Charts: scrolled rather than shrunk on phones. */
 .chart {
   border: 1px solid var(--olf-border-default);
   border-radius: var(--olf-radius-xl);
@@ -189,8 +180,6 @@ section[id].section { scroll-margin-top: calc(6.25rem - var(--section-pad)); }
   background: var(--olf-bg-surface);
 }
 .chart img { width: 100%; height: auto; min-width: 56rem; }
-:root[data-theme="light"] .only-dark,
-:root[data-theme="dark"] .only-light { display: none; }
 
 /* Tags (Figma: Tag component) */
 .tag {
