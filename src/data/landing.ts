@@ -21,7 +21,7 @@ export const sections = [
 ].map((s, i) => ({ ...s, depth: `${String(i * 10).padStart(2, "0")} m` }));
 
 /** The latest release, shown in the announcement bar. */
-export const release = { version: "0.4.0-alpha.1", note: "Dex-only identity and one-command GitHub App setup." };
+export const release = { version: "0.5.0-alpha.1", note: "Sign in with GitHub: your team decides your role across every service." };
 
 /** The README Quickstart. Phase 3 reads these from the synced README instead. */
 export const installCommands = [
