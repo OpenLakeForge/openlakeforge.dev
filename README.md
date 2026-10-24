@@ -7,8 +7,9 @@ a presentation page and the documentation, served at
 Built with Astro and Starlight in the OpenLakeForge **Deep Water** design
 system ([Figma](https://www.figma.com/design/40rDaa8G9IWLD26TYjcIRz)). The
 documentation is synced at build time from the openlakeforge repository at
-the ref in `docs.lock` (`main` until v0.5-alpha is released, then the release
-tag) by `scripts/sync-docs.mjs`, which runs before `dev` and `build`.
+the ref in `docs.lock` (the latest release tag) by `scripts/sync-docs.mjs`,
+which runs before `dev` and `build`. A new release bumps `docs.lock` and the
+announcement bar (`release` in `src/data/landing.ts`) together.
 
 ## Develop
 
@@ -41,5 +42,5 @@ which is connected to this repository (no token lives in GitHub).
 ([`CODEOWNERS`](.github/CODEOWNERS)) approves.
 
 **Status:** the presentation page and the docs sync are built. The docs come
-from openlakeforge `main` (`docs.lock`) until v0.5-alpha is released, then
-from the release tag. See [PLAN.md](PLAN.md).
+from the openlakeforge `v0.5.0-alpha.1` tag (`docs.lock`). See
+[PLAN.md](PLAN.md).
