@@ -17,16 +17,19 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     <script is:inline>
       (() => {
         const root = document.documentElement, nav = navigator;
-        if ((nav.deviceMemory ?? 8) <= 4 || (nav.hardwareConcurrency ?? 8) <= 4 || nav.connection?.saveData) {
+        // deviceMemory is Chromium-only. Not hardwareConcurrency: Safari caps
+        // it, so an iPhone 13 that animates smoothly reports 4.
+        if ((nav.deviceMemory ?? 8) <= 4 || nav.connection?.saveData) {
           root.classList.add("still-water");
           return;
         }
-        // Measured after load, so fonts and scripts loading don't count.
+        // Measured after load, so fonts and scripts loading don't count. Below
+        // 20 fps: iOS Low Power Mode caps frames at 30 and is not a slow device.
         let frames = 0, start;
         const tick = (t) => {
           start ??= t;
           if (t - start < 1000) return void (frames++, requestAnimationFrame(tick));
-          if (frames < 30) root.classList.add("still-water");
+          if (frames < 20) root.classList.add("still-water");
         };
         addEventListener("load", () => requestAnimationFrame(tick), { once: true });
       })();
