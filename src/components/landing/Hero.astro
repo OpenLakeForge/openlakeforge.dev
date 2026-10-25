@@ -12,6 +12,25 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
 <section class="hero" id="surface" data-tone="shallow">
   <!-- The rings and the pointer's wake, fading out toward the hero's bottom. -->
   <div class="water" aria-hidden="true">
+    <!-- Low-end devices get the still contours: decided before the first
+         paint, then by the frame rate in case the guess was wrong. -->
+    <script is:inline>
+      (() => {
+        const root = document.documentElement, nav = navigator;
+        if ((nav.deviceMemory ?? 8) <= 4 || (nav.hardwareConcurrency ?? 8) <= 4 || nav.connection?.saveData) {
+          root.classList.add("still-water");
+          return;
+        }
+        // Measured after load, so fonts and scripts loading don't count.
+        let frames = 0, start;
+        const tick = (t) => {
+          start ??= t;
+          if (t - start < 1000) return void (frames++, requestAnimationFrame(tick));
+          if (frames < 30) root.classList.add("still-water");
+        };
+        addEventListener("load", () => requestAnimationFrame(tick), { once: true });
+      })();
+    </script>
     <canvas class="wake" data-wake aria-hidden="true"></canvas>
     <svg class="contours" viewBox="0 0 1200 800" aria-hidden="true">
       <g fill="none" stroke="currentColor" transform="translate(600 380)">
@@ -185,7 +204,7 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     };
 
     hero.addEventListener("pointermove", (e) => {
-      if (!motion.matches) return;
+      if (!motion.matches || document.documentElement.classList.contains("still-water")) return;
       const origin = canvas.getBoundingClientRect(), x = e.clientX - origin.x, y = e.clientY - origin.y;
       // Every cell along the path, so a fast stroke still leaves one wake.
       const steps = last ? Math.min(Math.ceil(Math.hypot(x - last.x, y - last.y) / CELL), 50) : 1;
@@ -225,9 +244,10 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     pointer-events: none;
   }
   /* Ripples: each ring rises at the centre, spreads outward and fades, one
-     every 2 s. With reduced motion the rings stay as still depth contours. */
+     every 2 s. With reduced motion, or on a low-end device (.still-water),
+     the rings stay as still depth contours. */
   @media (prefers-reduced-motion: no-preference) {
-    .contours g g { animation: ripple 20s linear calc(var(--i) * -2s) infinite; }
+    :global(html:not(.still-water)) .contours g g { animation: ripple 20s linear calc(var(--i) * -2s) infinite; }
   }
   @keyframes ripple {
     from { transform: scale(0.3) rotate(10deg); opacity: 0; }
