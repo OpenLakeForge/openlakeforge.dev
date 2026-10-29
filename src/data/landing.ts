@@ -50,9 +50,9 @@ export const layers = [
 ];
 
 export const reasons = [
-  { eyebrow: "Small teams", title: "Built for small data teams", text: "Less operational work to run a modern lakehouse." },
+  { eyebrow: "Sovereign", title: "Yours end to end", text: "Your infrastructure, your storage, your data: no third-party service in the data path. Apache-2.0." },
+  { eyebrow: "Small teams", title: "Run by one data team", text: "Assembled, pinned and tested, so you don't need a platform engineer to start." },
   { eyebrow: "Modular", title: "Start with the core", text: "Run the core data path alone, add governance and dashboards when you need them." },
-  { eyebrow: "Self-hosted", title: "Open and yours", text: "Your infrastructure, your storage, your data. Apache-2.0." },
   { eyebrow: "Portable", title: "Deploy anywhere", text: "Local Kubernetes, AWS and Azure share the same platform contracts." },
   { eyebrow: "Open format", title: "Apache Iceberg", text: "Storage stays independent from the engines that read it." },
   { eyebrow: "Batteries included", title: "Infrastructure included", text: "Kubernetes, Terraform and Helm ship with the platform, pinned and tested." },
@@ -110,13 +110,15 @@ export const targets = [
 
 export const fit = {
   yes: [
+    "Teams whose data must stay in their own infrastructure: sovereignty, residency or sector rules (public sector, health, finance)",
+    "Data teams already on Kubernetes that want an open, predictable-cost alternative to a proprietary warehouse",
+    "Consultancies and integrators deploying the same tested platform for several clients",
     "A small team that wants a working batch lakehouse without building the platform first",
-    "Keeping data on your own Kubernetes, storage and cloud account",
-    "Moving the same project between a laptop, AWS and Azure",
   ],
   notYet: [
     "Streaming workloads: v1 is batch-first",
     "Large organisations whose platform team already builds its own",
     "Teams that want a fully managed SaaS",
+    "A small team with no Kubernetes and no residency constraint: a managed warehouse is simpler",
   ],
 };
