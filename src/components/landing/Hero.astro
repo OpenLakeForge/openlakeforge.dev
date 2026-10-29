@@ -17,6 +17,9 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     <script is:inline>
       (() => {
         const root = document.documentElement, nav = navigator;
+        // The rings ripple on a canvas, so the SVG's still contours are
+        // hidden from the first paint; without JavaScript they stay.
+        root.classList.add("live-water");
         // deviceMemory is Chromium-only. Not hardwareConcurrency: Safari caps
         // it, so an iPhone 13 that animates smoothly reports 4.
         if ((nav.deviceMemory ?? 8) <= 4 || nav.connection?.saveData) {
@@ -37,13 +40,14 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     <canvas class="wake" data-wake aria-hidden="true"></canvas>
     <svg class="contours" viewBox="0 0 1200 800" aria-hidden="true">
       <g fill="none" stroke="currentColor" transform="translate(600 380)">
-        {rings.map(([s, r, o], i) => (
-          <g transform={`scale(${s}) rotate(${r})`} opacity={o} style={`--i: ${i}`}>
+        {rings.map(([s, r, o]) => (
+          <g transform={`scale(${s}) rotate(${r})`} opacity={o}>
             <path d={outline} stroke-width="2.5" vector-effect="non-scaling-stroke" />
           </g>
         ))}
       </g>
     </svg>
+    <canvas class="rings" data-rings aria-hidden="true"></canvas>
   </div>
   <div class="wrap content">
     <Mark size="5.5rem" />
@@ -221,6 +225,70 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     hero.addEventListener("pointerleave", () => (last = null));
   }
 
+  // Ripples: each ring rises at the centre, spreads outward and fades, one
+  // every 2 s. Drawn on a canvas, not by scaling the SVG's rings with CSS:
+  // Chrome lays out and repaints a transformed SVG's whole area every frame,
+  // a few screens of pixels on a Retina MacBook. The loop stops with reduced
+  // motion, on a low-end device (.still-water, where the SVG's contours show
+  // still) and while the hero is out of view.
+  {
+    const svg = hero.querySelector<SVGSVGElement>(".contours")!;
+    const sheet = hero.querySelector<HTMLCanvasElement>("[data-rings]")!;
+    const pen = sheet.getContext("2d")!;
+    const outline = new Path2D(svg.querySelector("path")!.getAttribute("d")!);
+    const count = svg.querySelectorAll("g g").length;
+    const calm = matchMedia("(prefers-reduced-motion: reduce)");
+    const PERIOD = 20, GAP = 2, STROKE = 2.5; // s per ring, s between rings, CSS px
+    let ratio = 1, unit = 1, cx = 0, cy = 0; // device px per CSS px, CSS px per viewBox unit, the centre
+    let visible = false, running = false;
+
+    // The SVG keeps its layout while hidden: the rings follow its centre,
+    // (600, 380) in the viewBox, and its scale.
+    const fit = () => {
+      ratio = Math.min(devicePixelRatio, 2);
+      sheet.width = Math.round(sheet.clientWidth * ratio);
+      sheet.height = Math.round(sheet.clientHeight * ratio);
+      const box = svg.getBoundingClientRect(), origin = sheet.getBoundingClientRect();
+      unit = box.width / 1200;
+      cx = box.x - origin.x + 600 * unit;
+      cy = box.y - origin.y + 380 * unit;
+    };
+
+    // The CSS animation it replaces: scale 0.3 → 10, rotate 10° → -24°,
+    // opacity 0 → 1 by 8 %, then back to 0, ring i 2·i s ahead.
+    const draw = (t: number) => {
+      pen.setTransform(1, 0, 0, 1, 0, 0);
+      pen.clearRect(0, 0, sheet.width, sheet.height);
+      pen.strokeStyle = getComputedStyle(sheet).color; // --ripple
+      for (let i = 0; i < count; i++) {
+        const p = ((t / 1000 + GAP * i) / PERIOD) % 1;
+        const scale = (0.3 + 9.7 * p) * unit, turn = ((10 - 34 * p) * Math.PI) / 180;
+        const k = scale * ratio, cos = Math.cos(turn) * k, sin = Math.sin(turn) * k;
+        pen.setTransform(cos, sin, -sin, cos, cx * ratio, cy * ratio);
+        pen.globalAlpha = p < 0.08 ? p / 0.08 : (1 - p) / 0.92;
+        pen.lineWidth = STROKE / scale; // one width at every scale, like non-scaling-stroke
+        pen.stroke(outline);
+      }
+    };
+
+    const live = () => visible && !calm.matches && !document.documentElement.classList.contains("still-water");
+    const frame = (t: number) => {
+      if (live()) return void (draw(t), requestAnimationFrame(frame));
+      running = false;
+      pen.setTransform(1, 0, 0, 1, 0, 0);
+      pen.clearRect(0, 0, sheet.width, sheet.height);
+    };
+    const start = () => {
+      if (running || !live()) return;
+      running = true;
+      requestAnimationFrame(frame);
+    };
+    fit();
+    new ResizeObserver(() => { fit(); if (running) draw(performance.now()); }).observe(hero);
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; start(); }).observe(hero);
+    calm.addEventListener("change", start);
+  }
+
   for (const button of document.querySelectorAll<HTMLButtonElement>(".hero .copy")) {
     button.addEventListener("click", async () => {
       try {
@@ -247,16 +315,12 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
     opacity: var(--contour-opacity);
     pointer-events: none;
   }
-  /* Ripples: each ring rises at the centre, spreads outward and fades, one
-     every 2 s. With reduced motion, or on a low-end device (.still-water),
-     the rings stay as still depth contours. */
+  .rings { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--ripple); opacity: var(--contour-opacity); }
+  /* The rings ripple on the canvas (the script's "Ripples"). With reduced
+     motion, on a low-end device (.still-water) or without JavaScript, they
+     stay as the SVG's still depth contours. */
   @media (prefers-reduced-motion: no-preference) {
-    :global(html:not(.still-water)) .contours g g { animation: ripple 20s linear calc(var(--i) * -2s) infinite; }
-  }
-  @keyframes ripple {
-    from { transform: scale(0.3) rotate(10deg); opacity: 0; }
-    8% { opacity: 1; }
-    to { transform: scale(10) rotate(-24deg); opacity: 0; }
+    :global(html.live-water:not(.still-water)) .contours { visibility: hidden; }
   }
   .content {
     position: relative;
