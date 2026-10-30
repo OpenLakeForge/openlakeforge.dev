@@ -475,9 +475,10 @@ updates `docs.lock`, and merging it into `main` deploys the site.
 
 ## Phase 6: Polish
 
-- **`llms.txt` / `llms-full.txt`** (`starlight-llms-txt`): the docs as plain
-  Markdown for AI agents, which backs up the landing's "AI-ready" claim. Add a
-  "Copy page as Markdown" button on docs pages.
+- **`llms.txt` / `llms-full.txt`** (done, `src/lib/llms.ts`): the docs as plain
+  Markdown for AI agents, which backs up the landing's "AI-ready" claim, with a
+  "Copy page as Markdown" button on docs pages. Built in the site rather than
+  with `starlight-llms-txt`, whose `llms.txt` doesn't list pages.
 - **SEO**: sitemap, canonical URLs, Open Graph images generated per page
   (title + Deep Water background + mark), `robots.txt`.
 - **404 page** in the Deep Water style ("This part of the lake is uncharted").

@@ -5,16 +5,42 @@ import { targets } from "../../data/landing";
 <section class="wrap section" id="deploy-anywhere">
   <div class="section-head">
     <p class="eyebrow">Deploy anywhere</p>
-    <h2 class="title">Same contracts on your laptop and in the cloud.</h2>
+    <h2 class="title">One set of contracts, from your laptop to the cloud.</h2>
+    <p class="lede">
+      Local is the supported target today. AWS and Azure run the same platform modules and are earlier on the road: use
+      them to evaluate, not for production, until the cloud beta.
+    </p>
   </div>
   <div class="grid grid-3">
-    {targets.map(({ eyebrow, title, text, command }) => (
+    {targets.map(({ eyebrow, title, text, command, status, guide }) => (
       <article class="card">
-        <p class="eyebrow">{eyebrow}</p>
+        <div class="head">
+          <p class="eyebrow">{eyebrow}</p>
+          <span class={`status ${status.tone}`}>{status.label}</span>
+        </div>
         <h3>{title}</h3>
         <p>{text}</p>
         <code>{command}</code>
+        <a class="guide" href={guide}>Read the guide <span aria-hidden="true">→</span></a>
       </article>
     ))}
   </div>
 </section>
+
+<style>
+  .head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--olf-space-2); }
+  .status {
+    padding: var(--olf-space-0-5) var(--olf-space-2);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font: 500 0.6875rem / 1.4 var(--olf-font-mono);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .supported { color: var(--olf-success); }
+  .preview { color: var(--olf-warning); }
+  .experimental { color: var(--olf-text-secondary); }
+  .card code { margin-top: auto; }
+  .guide { font-size: var(--olf-text-small); color: var(--olf-link); text-decoration: none; }
+  .guide:hover { text-decoration: underline; }
+</style>

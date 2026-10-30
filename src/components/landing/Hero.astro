@@ -1,6 +1,6 @@
 ---
 import Mark from "../Mark.astro";
-import { installCommands } from "../../data/landing";
+import { installCommands, requirements } from "../../data/landing";
 import { quickstartHref, repositoryUrl } from "../../lib/nav";
 
 // Lake-bed depth contours: one outline, scaled and turned.
@@ -63,6 +63,10 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
         <span class="line"><span class="prompt">$ </span>{command}{comment && <span class="comment">   # {comment}</span>}</span>
       ))}</code></pre>
       <button class="copy" type="button" data-copy={clipboard}>[ Copy ]</button>
+      <p class="needs">
+        Three commands, one deployed lakehouse. Needs {requirements.summary}; {requirements.firstDeploy}.{" "}
+        <a href={requirements.href}>Requirements <span aria-hidden="true">→</span></a>
+      </p>
     </div>
     <div class="actions">
       <a class="btn btn-primary" href={quickstartHref}>Quick start <span aria-hidden="true">→</span></a>
@@ -336,6 +340,8 @@ const clipboard = installCommands.map((c) => c.command).join("\n");
   .install { position: relative; width: min(100%, 42rem); }
   .install .terminal { padding-right: var(--olf-space-24); }
   .line { display: block; white-space: pre; }
+  .needs { margin: var(--olf-space-3) 0 0; font-size: var(--olf-text-small); line-height: 1.6; color: var(--olf-text-secondary); text-wrap: pretty; }
+  .needs a { color: var(--olf-link); white-space: nowrap; }
   .copy {
     position: absolute;
     top: var(--olf-space-4);

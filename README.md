@@ -24,6 +24,8 @@ npm run preview   # serve dist/
 
 - `/` is the presentation page (`src/pages/index.astro`, copy in `src/data/landing.ts`).
 - `/style-guide/` shows every documentation element in the theme.
+- `/llms.txt`, `/llms-full.txt`, `/llms-small.txt` and `/<docs page>.md` serve the
+  synced docs as Markdown for AI agents (`src/lib/llms.ts`).
 
 ## Contribute and deploy
 
