@@ -53,7 +53,7 @@ export const reasons = [
   { eyebrow: "Sovereign", title: "Yours end to end", text: "Your infrastructure, your storage, your data: no third-party service in the data path. Apache-2.0." },
   { eyebrow: "Small teams", title: "Run by one data team", text: "Assembled, pinned and tested, so you don't need a platform engineer to start." },
   { eyebrow: "Modular", title: "Start with the core", text: "Run the core data path alone, add governance and dashboards when you need them." },
-  { eyebrow: "Portable", title: "Deploy anywhere", text: "Local Kubernetes, AWS and Azure share the same platform contracts." },
+  { eyebrow: "Portable", title: "Built to move", text: "Designed so local Kubernetes, AWS and Azure share the same platform contracts. Local leads; the cloud follows." },
   { eyebrow: "Open format", title: "Apache Iceberg", text: "Storage stays independent from the engines that read it." },
   { eyebrow: "Batteries included", title: "Infrastructure included", text: "Kubernetes, Terraform and Helm ship with the platform, pinned and tested." },
 ];
@@ -102,11 +102,43 @@ export const presets = [
   { name: "Full", isDefault: false, includes: "Slim + OpenMetadata governance + Superset dashboards.", when: "You also want lineage, a catalog UI and dashboards." },
 ];
 
+/**
+ * Each target's maturity, as the synced release's guides state it. A release
+ * that changes a provider's status updates its `status` here.
+ */
 export const targets = [
-  { eyebrow: "Local", title: "kind on Docker", text: "The whole platform on your machine. Plain HTTP on *.olf.localhost, no certificates.", command: "olf deploy --provider local" },
-  { eyebrow: "AWS", title: "EKS, S3, RDS, Glue", text: "Managed Kubernetes, storage, database and catalog behind the same contracts.", command: "olf deploy --provider aws" },
-  { eyebrow: "Azure", title: "AKS and ACR", text: "The in-cluster platform services on Azure Kubernetes Service.", command: "olf deploy --provider azure" },
-];
+  {
+    eyebrow: "Local",
+    title: "kind on Docker",
+    text: "The whole platform on your machine. Plain HTTP on *.olf.localhost, no certificates.",
+    command: "olf deploy --provider local",
+    status: { label: "Supported · alpha", tone: "supported" },
+    guide: "/docs/guides/local-installation/",
+  },
+  {
+    eyebrow: "AWS",
+    title: "EKS, S3, RDS, Glue",
+    text: "Managed Kubernetes, storage, database and catalog. Passes the end-to-end suite in a test account; not production-hardened.",
+    command: "olf deploy --provider aws",
+    status: { label: "Alpha · test accounts", tone: "preview" },
+    guide: "/docs/guides/cloud/deploy-to-aws/",
+  },
+  {
+    eyebrow: "Azure",
+    title: "AKS and ACR",
+    text: "The in-cluster platform services on Azure Kubernetes Service. Checked with terraform validate and plan, not yet deployed live.",
+    command: "olf deploy --provider azure",
+    status: { label: "Preview · plan only", tone: "experimental" },
+    guide: "/docs/guides/cloud/deploy-to-azure/",
+  },
+] as const;
+
+/** What a first local deploy needs, from the installation guide's Hardware section. */
+export const requirements = {
+  summary: "Docker with 4 CPUs and 16 GB of memory, and up to 100 GB of disk",
+  firstDeploy: "the first deploy takes several minutes while images download",
+  href: "/docs/guides/local-installation/#hardware",
+};
 
 export const fit = {
   yes: [
@@ -120,5 +152,6 @@ export const fit = {
     "Large organisations whose platform team already builds its own",
     "Teams that want a fully managed SaaS",
     "A small team with no Kubernetes and no residency constraint: a managed warehouse is simpler",
+    "Production on AWS or Azure: the cloud targets are alpha and preview until the cloud beta",
   ],
 };

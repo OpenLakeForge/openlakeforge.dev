@@ -1,4 +1,5 @@
 ---
+import { requirements } from "../../data/landing";
 import { docsHref, quickstartHref } from "../../lib/nav";
 ---
 
@@ -7,7 +8,8 @@ import { docsHref, quickstartHref } from "../../lib/nav";
     <p class="eyebrow">Get started</p>
     <h2 class="display">The lake is yours.<br /><span class="accent">We bring the forge.</span></h2>
     <p class="lede">
-      Docker and uv are all you need. <code>olf</code> provisions its own pinned Terraform, Helm, kubectl and kind.
+      You need uv and {requirements.summary}. <code>olf</code> provisions its own pinned Terraform, Helm, kubectl and
+      kind; {requirements.firstDeploy}. <a href={requirements.href}>See the requirements</a>.
     </p>
     <div class="actions">
       <a class="btn btn-primary" href={quickstartHref}>Read the quick start <span aria-hidden="true">→</span></a>
@@ -19,5 +21,6 @@ import { docsHref, quickstartHref } from "../../lib/nav";
 <style>
   .section-head { max-width: 44rem; margin-bottom: 0; }
   .actions { justify-content: center; margin-top: var(--olf-space-4); }
+  .lede a { color: var(--olf-link); }
   .lede code { font-family: var(--olf-font-mono); font-size: 0.9em; color: var(--olf-link); }
 </style>
