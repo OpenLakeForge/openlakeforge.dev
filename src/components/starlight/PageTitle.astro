@@ -1,0 +1,59 @@
+---
+/** Starlight override: the page title, then, on synced docs pages, its Markdown for AI agents. */
+import Default from "@astrojs/starlight/components/PageTitle.astro";
+import { isAgentPage, markdownHref } from "../../lib/llms";
+
+const { id } = Astro.locals.starlightRoute.entry;
+const href = isAgentPage(id) ? markdownHref(id) : undefined;
+---
+
+<Default />
+{href && (
+  <div class="page-markdown">
+    <button type="button" data-markdown={href}><span class="label">Copy page as Markdown</span></button>
+    <a href={href}>View as Markdown</a>
+    <a href="/llms.txt">llms.txt</a>
+  </div>
+)}
+
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>(".page-markdown button[data-markdown]")) {
+    const label = button.querySelector(".label")!;
+    const text = label.textContent;
+    button.addEventListener("click", async () => {
+      try {
+        const response = await fetch(button.dataset.markdown!);
+        if (!response.ok) throw new Error(`${response.status}`);
+        await navigator.clipboard.writeText(await response.text());
+        label.textContent = "Copied";
+      } catch {
+        label.textContent = "Copy failed";
+      }
+      setTimeout(() => (label.textContent = text), 2000);
+    });
+  }
+</script>
+
+<style>
+  .page-markdown {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--olf-space-2) var(--olf-space-4);
+    margin-top: var(--olf-space-3);
+    font: 500 0.75rem / 1.4 var(--olf-font-mono);
+    letter-spacing: 0.04em;
+  }
+  button {
+    padding: var(--olf-space-1) var(--olf-space-3);
+    border: 1px solid var(--olf-border-default);
+    border-radius: var(--olf-radius-md);
+    background: transparent;
+    color: var(--olf-text-secondary);
+    font: inherit;
+    cursor: pointer;
+  }
+  button:hover { color: var(--olf-text-primary); border-color: var(--olf-link); }
+  a { color: var(--olf-text-secondary); text-decoration: none; }
+  a:hover { color: var(--olf-link); }
+</style>

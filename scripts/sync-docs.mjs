@@ -15,6 +15,7 @@ const contentDir = join(site, "src/content/docs/docs");
 const changelogPage = join(site, "src/content/docs/changelog.md");
 const assetsDir = join(site, "public/docs-assets");
 const sidebarFile = join(site, "src/generated/sidebar.json");
+const releaseFile = join(site, "src/generated/release.json");
 
 const ref = process.env.OLF_DOCS_REF || readFileSync(join(site, "docs.lock"), "utf8").trim();
 const source = process.env.OLF_DOCS_DIR || checkout(ref);
@@ -61,8 +62,21 @@ for (const asset of assets) {
   mkdirSync(dirname(join(assetsDir, asset)), { recursive: true });
   cpSync(from, join(assetsDir, asset));
 }
+// The release and the JSON Schemas of the files an agent edits, for /llms.txt.
+const schemaDir = "docs/schema";
+const schemas = listSchemas(join(source, schemaDir)).map((file) => {
+  cpSync(join(source, schemaDir, file), join(assetsDir, schemaDir, file));
+  return { file, title: JSON.parse(readFileSync(join(source, schemaDir, file), "utf8")).title ?? file };
+});
 write(sidebarFile, `${JSON.stringify(sidebar, null, 2)}\n`);
+write(releaseFile, `${JSON.stringify({ ref, sha, schemas }, null, 2)}\n`);
 console.log(`Synced ${Object.keys(published).length} pages and ${assets.size} assets from openlakeforge @ ${ref} (${sha.slice(0, 7)}).`);
+
+function listSchemas(dir) {
+  if (!existsSync(dir)) return [];
+  mkdirSync(join(assetsDir, schemaDir), { recursive: true });
+  return readdirSync(dir).filter((file) => file.endsWith(".schema.json")).sort();
+}
 
 function checkout(ref) {
   const dir = join(site, ".cache/openlakeforge");

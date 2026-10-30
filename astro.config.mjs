@@ -32,6 +32,7 @@ export default defineConfig({
       components: {
         SiteTitle: "./src/components/starlight/SiteTitle.astro",
         SocialIcons: "./src/components/starlight/SocialIcons.astro",
+        PageTitle: "./src/components/starlight/PageTitle.astro",
       },
       expressiveCode: {
         themes: [deepWaterTheme],

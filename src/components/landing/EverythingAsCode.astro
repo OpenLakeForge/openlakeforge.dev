@@ -16,6 +16,10 @@ const lines = agentSession.map(({ kind, text = "", comment }) => ({ kind, mark: 
       the same source of truth as your team, proposes changes as pull requests, and the platform validates them like any
       other change.
     </p>
+    <p class="agents">
+      Point your agent at <a href="/llms.txt">openlakeforge.dev/llms.txt</a>: every docs page as Markdown, or all of it
+      in <a href="/llms-full.txt">llms-full.txt</a>, with the JSON Schemas of the files it edits.
+    </p>
   </div>
   <div class="split">
     <table>
@@ -39,6 +43,8 @@ const lines = agentSession.map(({ kind, text = "", comment }) => ({ kind, mark: 
 <style>
   /* The session takes the width its lines need (up to 30rem, past which the
      request wraps); the table takes the rest. */
+  .agents { margin: 0; font-size: var(--olf-text-small); line-height: 1.6; color: var(--olf-text-secondary); }
+  .agents a { font-family: var(--olf-font-mono); color: var(--olf-link); }
   .split { display: grid; grid-template-columns: minmax(22rem, 1fr) minmax(0, max-content); gap: var(--olf-space-6); align-items: start; }
   table {
     width: 100%;
