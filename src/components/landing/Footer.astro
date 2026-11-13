@@ -15,6 +15,7 @@ import { repositoryUrl } from "../../lib/nav";
       <p>© OpenLakeForge · Apache-2.0</p>
       <nav aria-label="Footer">
         <a href="/docs/">Docs</a>
+        <a href="/floe/">Floe</a>
         <a href={`${repositoryUrl}/blob/main/docs/adr/README.md`}>ADRs</a>
         <a href={`${repositoryUrl}/releases`}>Releases</a>
         <a href="/llms.txt">llms.txt</a>
@@ -37,7 +38,7 @@ import { repositoryUrl } from "../../lib/nav";
     text-decoration: none;
   }
   a:hover { color: var(--olf-text-primary); }
-  nav { display: flex; gap: var(--olf-space-8); }
+  nav { display: flex; flex-wrap: wrap; gap: var(--olf-space-3) var(--olf-space-8); }
   /* Where the gauge gives way to the fixed "Sections" button (DepthGauge.astro),
      the button sits 16px above the bottom edge: leave it room so it never
      covers these links. */
