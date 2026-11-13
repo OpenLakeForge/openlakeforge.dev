@@ -44,5 +44,5 @@ which is connected to this repository (no token lives in GitHub).
 ([`CODEOWNERS`](.github/CODEOWNERS)) approves.
 
 **Status:** the presentation page and the docs sync are built. The docs come
-from the openlakeforge `v0.5.0-alpha.1` tag (`docs.lock`). See
+from the openlakeforge `v0.6.0-alpha.3` tag (`docs.lock`). See
 [PLAN.md](PLAN.md).
