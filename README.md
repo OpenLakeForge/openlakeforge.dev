@@ -11,6 +11,13 @@ the ref in `docs.lock` (the latest release tag) by `scripts/sync-docs.mjs`,
 which runs before `dev` and `build`. A new release bumps `docs.lock` and the
 announcement bar (`release` in `src/data/landing.ts`) together.
 
+The [Floe](https://github.com/OpenLakeForge/floe) documentation is synced the
+same way, from the Floe ref in `floe.lock` (`main` until a Floe release ships
+`docs/navigation.yaml`), and served under **/floe/** with its own sidebar
+(`src/route-middleware.ts` shows each page only the sidebar of its section).
+`FLOE_DOCS_REF` and `FLOE_DOCS_DIR` override it like `OLF_DOCS_REF` and
+`OLF_DOCS_DIR`. Floe's `CHANGELOG.md` is published at `/floe/changelog/`, last in the Floe sidebar.
+
 ## Develop
 
 Requires Node.js 22 or later.
@@ -23,9 +30,10 @@ npm run preview   # serve dist/
 ```
 
 - `/` is the presentation page (`src/pages/index.astro`, copy in `src/data/landing.ts`).
+- `/docs/` is the OpenLakeForge documentation, `/floe/` the Floe documentation, both synced.
 - `/style-guide/` shows every documentation element in the theme.
 - `/llms.txt`, `/llms-full.txt`, `/llms-small.txt` and `/<docs page>.md` serve the
-  synced docs as Markdown for AI agents (`src/lib/llms.ts`).
+  synced docs of OpenLakeForge and Floe as Markdown for AI agents (`src/lib/llms.ts`).
 
 ## Contribute and deploy
 

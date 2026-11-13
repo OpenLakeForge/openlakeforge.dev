@@ -101,26 +101,27 @@ export function defaultSlug(repoPath) {
   return path.endsWith("/README") ? path.slice(0, -"/README".length) : path;
 }
 
-/** The site route of a slug under the docs collection. */
-export function routeFor(slug) {
-  return slug ? `/docs/${slug}/` : "/docs/";
+/** The site route of a slug under a section of the docs collection: `docs` (OpenLakeForge) or `floe`. */
+export function routeFor(slug, base = "docs") {
+  return slug ? `/${base}/${slug}/` : `/${base}/`;
 }
 
 /**
  * T4: rewrite one link target found in `sourcePath`.
- * `published` maps repository paths to slugs; `assets` collects images to copy.
+ * `published` maps repository paths to slugs; `assets` collects images to copy,
+ * served under `/<base>-assets/`.
  */
-export function rewriteTarget(target, { sourcePath, published, repoUrl, ref, assets }) {
+export function rewriteTarget(target, { sourcePath, published, repoUrl, ref, assets, base = "docs" }) {
   if (!target || target.startsWith("#") || target.startsWith("//") || SCHEME.test(target)) return target;
   const [pathPart, anchor] = splitAnchor(target);
   const repoPath = pathPart.startsWith("/")
     ? posix.normalize(pathPart.slice(1))
     : posix.normalize(posix.join(posix.dirname(sourcePath), decodeURI(pathPart)));
   if (repoPath.startsWith("..")) return target;
-  if (repoPath in published) return routeFor(published[repoPath]) + (anchor ? `#${anchor}` : "");
+  if (repoPath in published) return routeFor(published[repoPath], base) + (anchor ? `#${anchor}` : "");
   if (/\.(svg|png|jpe?g|gif|webp)$/i.test(repoPath)) {
     assets.add(repoPath);
-    return `/docs-assets/${repoPath}`;
+    return `/${base}-assets/${repoPath}`;
   }
   const kind = posix.extname(repoPath) ? "blob" : "tree";
   return `${repoUrl}/${kind}/${ref}/${repoPath}${anchor ? `#${anchor}` : ""}`;
@@ -170,11 +171,11 @@ export function convertAlerts(body) {
 }
 
 /** The whole page: frontmatter (T1, T2, T7), transformed body and provenance (T8). */
-export function transformPage(markdown, { sourcePath, title: titleOverride, published, repoUrl, ref, sha, assets }) {
+export function transformPage(markdown, { sourcePath, title: titleOverride, published, repoUrl, ref, sha, assets, base = "docs" }) {
   const { title, body, afterTitle } = extractTitle(markdown);
   const pageTitle = titleOverride ?? title ?? posix.basename(sourcePath, ".md");
   const description = extractDescription(afterTitle);
-  const transformed = convertAlerts(rewriteLinks(body, { sourcePath, published, repoUrl, ref, assets }));
+  const transformed = convertAlerts(rewriteLinks(body, { sourcePath, published, repoUrl, ref, assets, base }));
   const frontmatter = [
     "---",
     `title: ${JSON.stringify(pageTitle)}`,
@@ -182,12 +183,12 @@ export function transformPage(markdown, { sourcePath, title: titleOverride, publ
     `editUrl: ${JSON.stringify(`${repoUrl}/edit/main/${sourcePath}`)}`,
     "---",
   ].join("\n");
-  const provenance = `\n\n---\n\n<small>Synced from openlakeforge @ \`${ref}\` (\`${sha.slice(0, 7)}\`), [${sourcePath}](${repoUrl}/blob/${sha}/${sourcePath}).</small>\n`;
+  const provenance = `\n\n---\n\n<small>Synced from ${posix.basename(repoUrl)} @ \`${ref}\` (\`${sha.slice(0, 7)}\`), [${sourcePath}](${repoUrl}/blob/${sha}/${sourcePath}).</small>\n`;
   return `${frontmatter}\n\n${transformed.trimEnd()}${provenance}`;
 }
 
-/** The published pages and the Starlight sidebar from `docs/navigation.yaml`. */
-export function readNavigation(navigation, listMarkdown) {
+/** The published pages and the Starlight sidebar from `docs/navigation.yaml`, under the `base` section. */
+export function readNavigation(navigation, listMarkdown, base = "docs") {
   const published = {};
   const titles = {};
   const sidebar = [];
@@ -203,13 +204,13 @@ export function readNavigation(navigation, listMarkdown) {
       const slug = typeof item === "object" && item.slug ? item.slug.replace(/^\/|\/$/g, "") : defaultSlug(path);
       published[path] = safeSlug(path, slug);
       if (typeof item === "object" && item.title) titles[path] = item.title;
-      items.push({ slug: slug ? `docs/${slug}` : "docs" });
+      items.push({ slug: slug ? `${base}/${slug}` : base });
     }
     if (section.autogenerate) {
       safeSlug(section.autogenerate, section.autogenerate.replace(/\/$/, ""));
       for (const path of listMarkdown(section.autogenerate)) published[path] = safeSlug(path, defaultSlug(path));
       const directory = section.autogenerate.replace(/^docs\//, "").replace(/\/$/, "");
-      items.push({ autogenerate: { directory: `docs/${directory}` } });
+      items.push({ autogenerate: { directory: `${base}/${directory}` } });
     }
     sidebar.push({ label: section.label, items });
   }

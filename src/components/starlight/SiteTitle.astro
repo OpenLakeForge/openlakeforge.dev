@@ -1,14 +1,18 @@
 ---
-/** Starlight override: the OpenLakeForge mark and wordmark ("Lake" in highlight). */
+/** Starlight override: the OpenLakeForge mark and wordmark ("Lake" in highlight), then "Floe" on the Floe docs. */
 import Mark from "../Mark.astro";
 
 const { siteTitleHref } = Astro.locals.starlightRoute;
+const floe = Astro.url.pathname.startsWith("/floe/");
 ---
 
-<a href={siteTitleHref} class="site-title">
-  <Mark size="2rem" />
-  <span class="wordmark" translate="no">Open<span>Lake</span>Forge</span>
-</a>
+<div class="site-title">
+  <a href={siteTitleHref} class="site-title">
+    <Mark size="2rem" />
+    <span class="wordmark" translate="no">Open<span>Lake</span>Forge</span>
+  </a>
+  {floe && <a href="/floe/" class="product" translate="no">Floe</a>}
+</div>
 
 <style>
   .site-title {
@@ -25,5 +29,15 @@ const { siteTitleHref } = Astro.locals.starlightRoute;
   }
   .wordmark span {
     color: var(--olf-highlight);
+  }
+  .product {
+    padding-inline-start: var(--olf-space-3);
+    border-inline-start: 1px solid var(--olf-border-default);
+    font: 500 var(--olf-text-h4) / 1 var(--olf-font-heading);
+    color: var(--olf-text-secondary);
+    text-decoration: none;
+  }
+  .product:hover {
+    color: var(--olf-text-primary);
   }
 </style>
