@@ -33,7 +33,7 @@ npm run preview   # serve dist/
 - `/docs/` is the OpenLakeForge documentation, `/floe/` the Floe documentation, both synced.
 - `/style-guide/` shows every documentation element in the theme.
 - `/llms.txt`, `/llms-full.txt`, `/llms-small.txt` and `/<docs page>.md` serve the
-  synced docs as Markdown for AI agents (`src/lib/llms.ts`).
+  synced docs of OpenLakeForge and Floe as Markdown for AI agents (`src/lib/llms.ts`).
 
 ## Contribute and deploy
 

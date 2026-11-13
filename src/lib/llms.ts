@@ -26,17 +26,25 @@ export const schemaHref = (file: string) => `/docs-assets/docs/schema/${file}`;
 /** The released platform version the docs are synced from. */
 export const docsRef = release.ref;
 
+/** The Floe ref its docs are synced from. */
+export const floeRef = release.floe.ref;
+
 /** The page's Markdown twin: /docs/get-started/quickstart/ → /docs/get-started/quickstart.md. */
 export const markdownHref = (id: string) => `/${id}.md`;
 
-/** Pages served as Markdown: the synced docs and the changelog, not the style guide. */
-export const isAgentPage = (id: string) => id === "docs" || id.startsWith("docs/") || id === "changelog";
+/** A docs section: the OpenLakeForge docs under /docs/, or the Floe docs under /floe/. */
+export type Base = "docs" | "floe";
+
+const inBase = (id: string, base: Base) => id === base || id.startsWith(`${base}/`);
+
+/** Pages served as Markdown: the synced docs of both sections and the changelog, not the style guide. */
+export const isAgentPage = (id: string) => inBase(id, "docs") || inBase(id, "floe") || id === "changelog";
 
 export const isDecisionRecord = (id: string) => id === "docs/adr" || id.startsWith("docs/adr/");
 
-/** Every synced docs page, grouped and ordered as the sidebar shows them. */
-export async function docsSections(): Promise<Section[]> {
-  const entries = (await getCollection("docs")).filter(({ id }) => id === "docs" || id.startsWith("docs/"));
+/** Every synced page of a docs section, grouped and ordered as the sidebar shows them. */
+export async function docsSections(base: Base = "docs"): Promise<Section[]> {
+  const entries = (await getCollection("docs")).filter(({ id }) => inBase(id, base));
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const placed = new Set<string>();
   const take = (id: string) => {
@@ -77,7 +85,7 @@ export function absoluteLinks(markdown: string, site: URL): string {
 /** One page as Markdown: its title, description and source, then its body. */
 export function pageMarkdown(entry: Entry, site: URL): string {
   const { title, description } = entry.data;
-  const url = new URL(entry.id === "docs" ? "/docs/" : `/${entry.id}/`, site);
+  const url = new URL(`/${entry.id}/`, site);
   const head = [`# ${title}`];
   if (description) head.push(`> ${description}`);
   head.push(`Source: ${url}`);
@@ -96,6 +104,12 @@ export function abridge(markdown: string): string {
     .replace(/^<small>Synced from[^\n]*<\/small>[ \t]*$\n?/gm, "")
     .replace(/\n{3,}/g, "\n\n");
 }
+
+/** Introduces the Floe section of the three llms files. */
+export const floeSummary =
+  "> Floe is the data contract runtime OpenLakeForge uses between Bronze and Silver, and a standalone Python package " +
+  "(`pip install floe-python`): it validates raw files against a YAML contract, writes accepted rows to Parquet or " +
+  "Apache Iceberg, rejected rows to quarantine with the reason, and a JSON report per run.";
 
 /** The header shared by the three llms files. */
 export const llmsTitle = "# OpenLakeForge";
