@@ -21,13 +21,13 @@ export const sections = [
 ].map((s, i) => ({ ...s, depth: `${String(i * 10).padStart(2, "0")} m` }));
 
 /** The latest release, shown in the announcement bar. */
-export const release = { version: "0.5.0-alpha.1", note: "Sign in with GitHub: your team decides your role across every service." };
+export const release = { version: "0.6.0-alpha.3", note: "Frozen project contracts, an upgrade path from v0.5, and Gold as one dbt project." };
 
 /** The README Quickstart. Phase 3 reads these from the synced README instead. */
 export const installCommands = [
-  { command: "uv tool install openlakeforge", comment: "" },
+  { command: 'uv tool install "openlakeforge==0.6.0a3" --python 3.12', comment: "" },
   { command: "olf init", comment: "openlakeforge.yaml + lakehouse_code/" },
-  { command: "olf deploy --provider local", comment: "kind cluster + the whole platform" },
+  { command: "olf infra deploy", comment: "kind cluster + the whole platform" },
 ];
 
 export const components = [
@@ -61,7 +61,7 @@ export const reasons = [
 export const codeLayers = [
   { name: "Infrastructure", what: "Terraform + Helm, pinned in the release", file: "infra/ · component-catalog.yaml" },
   { name: "Platform", what: "Provider, stages, preset, identity", file: "openlakeforge.yaml" },
-  { name: "Data products", what: "Domains, products, sources", file: "lakehouse.yaml · source.yaml" },
+  { name: "Data products", what: "Domains, products, sources", file: "governance.yml · source.yaml" },
   { name: "Bronze → Silver", what: "Ingestion and technical contracts", file: "bronze/ · silver/" },
   { name: "Gold", what: "Business marts in SQL", file: "gold/ (dbt)" },
   { name: "Orchestration", what: "One job per product", file: "pipelines/dagster/" },
@@ -73,11 +73,12 @@ export const codeLayers = [
 export const agentSession: { kind: "you" | "cmd" | "note" | "ok" | "wait" | "gap"; text?: string; comment?: string }[] = [
   { kind: "you", text: "Add our daily orders export and a revenue-by-region mart." },
   { kind: "gap" },
-  { kind: "note", text: "reads   openlakeforge.yaml, lakehouse.yaml" },
-  { kind: "cmd", text: "olf source new orders" },
-  { kind: "note", text: "writes  silver/sales/orders.yaml", comment: "data contract" },
-  { kind: "cmd", text: "olf product new sales/revenue_by_region" },
-  { kind: "note", text: "writes  gold/revenue_by_region/models/*.sql" },
+  { kind: "note", text: "reads   openlakeforge.yaml, governance.yml" },
+  { kind: "cmd", text: "olf source new webshop --resource orders" },
+  { kind: "note", text: "writes  bronze/webshop/source.yaml" },
+  { kind: "cmd", text: "olf product new shop/revenue_by_region \\\n    --input webshop/orders \\\n    --gold-table mart_revenue_by_region" },
+  { kind: "note", text: "writes  silver/shop/contracts/orders.yml" },
+  { kind: "note", text: "writes  gold/models/revenue_by_region/*.sql" },
   { kind: "note", text: "opens   pull request #42" },
   { kind: "gap" },
   { kind: "ok", text: "build-revision   sha256:3f9c…" },
@@ -89,10 +90,10 @@ export const projectTree = [
   { line: "my-lakehouse/", comment: "" },
   { line: "├── openlakeforge.yaml", comment: "provider, stages" },
   { line: "└── lakehouse_code/", comment: "" },
-  { line: "    ├── lakehouse.yaml", comment: "domains, products" },
+  { line: "    ├── governance.yml", comment: "domains, products" },
   { line: "    ├── bronze/", comment: "dlt sources" },
   { line: "    ├── silver/", comment: "data contracts" },
-  { line: "    ├── gold/", comment: "dbt models" },
+  { line: "    ├── gold/", comment: "one dbt project" },
   { line: "    ├── pipelines/dagster/", comment: "jobs" },
   { line: "    └── dashboards/superset/", comment: "" },
 ];
@@ -111,7 +112,7 @@ export const targets = [
     eyebrow: "Local",
     title: "kind on Docker",
     text: "The whole platform on your machine. Plain HTTP on *.olf.localhost, no certificates.",
-    command: "olf deploy --provider local",
+    command: "olf infra deploy --provider local",
     status: { label: "Supported · alpha", tone: "supported" },
     guide: "/docs/guides/local-installation/",
   },
@@ -119,7 +120,7 @@ export const targets = [
     eyebrow: "AWS",
     title: "EKS, S3, RDS, Glue",
     text: "Managed Kubernetes, storage, database and catalog. Passes the end-to-end suite in a test account; not production-hardened.",
-    command: "olf deploy --provider aws",
+    command: "olf infra deploy --provider aws",
     status: { label: "Alpha · test accounts", tone: "preview" },
     guide: "/docs/guides/cloud/deploy-to-aws/",
   },
@@ -127,7 +128,7 @@ export const targets = [
     eyebrow: "Azure",
     title: "AKS and ACR",
     text: "The in-cluster platform services on Azure Kubernetes Service. Checked with terraform validate and plan, not yet deployed live.",
-    command: "olf deploy --provider azure",
+    command: "olf infra deploy --provider azure",
     status: { label: "Preview · plan only", tone: "experimental" },
     guide: "/docs/guides/cloud/deploy-to-azure/",
   },
