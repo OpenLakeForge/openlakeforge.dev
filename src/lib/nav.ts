@@ -2,6 +2,7 @@
 export const headerLinks = [
   { label: "Docs", href: "/docs/" },
   { label: "Architecture", href: "/docs/architecture/overview/" },
+  { label: "Floe", href: "/floe/" },
   { label: "Changelog", href: "/changelog/" },
 ];
 
