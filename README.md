@@ -43,6 +43,15 @@ which is connected to this repository (no token lives in GitHub).
 [CI](.github/workflows/ci.yml) build must pass, and the code owner
 ([`CODEOWNERS`](.github/CODEOWNERS)) approves.
 
+**If a merge does not deploy:** check that the commit on `main` has a
+`Workers Builds: openlakeforge-website` check, and compare the live banner with
+`release` in [`src/data/landing.ts`](src/data/landing.ts). Cloudflare starts a
+build only from a push, so with no build for the commit (as after the
+2026-11-13 Workers API incident, when #21 never built) *Retry build* in the
+dashboard has nothing to retry. Merge another pull request, or deploy by hand
+from a clean checkout of `main`: `npm ci && npm run build && npx wrangler deploy`
+after `npx wrangler login`.
+
 **Status:** the presentation page and the docs sync are built. The docs come
 from the openlakeforge `v0.6.0-alpha.3` tag (`docs.lock`). See
 [PLAN.md](PLAN.md).
