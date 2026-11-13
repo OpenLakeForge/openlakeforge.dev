@@ -134,9 +134,9 @@ export const targets = [
   },
 ] as const;
 
-/** What a first local deploy needs, from the installation guide's Hardware section. */
+/** What a first local deploy needs, from the installation guide's Hardware section. Disk stays in the guide: its 100 GB is Full with two stages, mostly image copies, not the Slim Quickstart. */
 export const requirements = {
-  summary: "Docker with 4 CPUs and 16 GB of memory, and up to 100 GB of disk",
+  summary: "Docker with 4 CPUs and 16 GB of memory",
   firstDeploy: "the first deploy takes several minutes while images download",
   href: "/docs/guides/local-installation/#hardware",
 };
