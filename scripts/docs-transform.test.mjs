@@ -136,3 +136,23 @@ test("a fence line with an info string inside a block is code, not a closing fen
   const body = "```text\n```js\n[x](../AGENTS.md)\n```\n```";
   assert.equal(rewriteLinks(body, context("docs/README.md")), body);
 });
+
+test("Floe docs live under /floe/: routes, assets, sidebar and provenance", () => {
+  const assets = new Set();
+  const floe = {
+    sourcePath: "docs/concepts/checks.md",
+    published: { "docs/README.md": "", "docs/reference/config.md": "reference/config" },
+    repoUrl: "https://github.com/OpenLakeForge/floe",
+    ref: "main",
+    assets,
+    base: "floe",
+  };
+  assert.equal(
+    rewriteLinks("[Config](../reference/config.md#schema) [home](../README.md) ![a](../assets/a.png)", floe),
+    "[Config](/floe/reference/config/#schema) [home](/floe/) ![a](/floe-assets/docs/assets/a.png)",
+  );
+  assert.deepEqual([...assets], ["docs/assets/a.png"]);
+  assert.match(transformPage("# Checks\n\nRules.\n", { ...floe, sha: "0123456789abcdef" }), /Synced from floe @ `main`/);
+  const { sidebar } = readNavigation({ sections: [{ label: "Get started", items: ["docs/README.md", "docs/get-started/quickstart.md"] }] }, () => [], "floe");
+  assert.deepEqual(sidebar, [{ label: "Get started", items: [{ slug: "floe" }, { slug: "floe/get-started/quickstart" }] }]);
+});

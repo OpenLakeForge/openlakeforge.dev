@@ -29,6 +29,8 @@ export default defineConfig({
         "./src/styles/tokens.css",
         "./src/styles/starlight.css",
       ],
+      // Each page shows the sidebar of its own docs: OpenLakeForge or Floe.
+      routeMiddleware: "./src/route-middleware.ts",
       components: {
         SiteTitle: "./src/components/starlight/SiteTitle.astro",
         SocialIcons: "./src/components/starlight/SocialIcons.astro",
@@ -58,7 +60,7 @@ export default defineConfig({
           },
         },
       },
-      // Built from openlakeforge's docs/navigation.yaml by scripts/sync-docs.mjs,
+      // Built from the docs/navigation.yaml of openlakeforge and floe by scripts/sync-docs.mjs,
       // which runs before dev and build. The style guide stays reachable by URL.
       sidebar: JSON.parse(readFileSync(new URL("./src/generated/sidebar.json", import.meta.url), "utf8")),
     }),
