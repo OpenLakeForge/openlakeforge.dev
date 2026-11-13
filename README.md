@@ -16,7 +16,7 @@ same way, from the Floe ref in `floe.lock` (`main` until a Floe release ships
 `docs/navigation.yaml`), and served under **/floe/** with its own sidebar
 (`src/route-middleware.ts` shows each page only the sidebar of its section).
 `FLOE_DOCS_REF` and `FLOE_DOCS_DIR` override it like `OLF_DOCS_REF` and
-`OLF_DOCS_DIR`.
+`OLF_DOCS_DIR`. Floe's `CHANGELOG.md` is published at `/floe/changelog/`, last in the Floe sidebar.
 
 ## Develop
 

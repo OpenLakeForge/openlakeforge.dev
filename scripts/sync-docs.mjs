@@ -28,7 +28,9 @@ const floe = syncDocs({
   base: "floe",
   ref: process.env.FLOE_DOCS_REF || readFileSync(join(site, "floe.lock"), "utf8").trim(),
   dir: process.env.FLOE_DOCS_DIR,
-  sparse: ["/docs/"],
+  sparse: ["/docs/", "/CHANGELOG.md"],
+  // Floe's changelog is a page of its docs, at /floe/changelog/, last in its sidebar.
+  changelog: "changelog",
 });
 
 // The OpenLakeForge changelog, at /changelog/.
@@ -58,7 +60,7 @@ write(sidebarFile, `${JSON.stringify([...olf.sidebar, ...floe.sidebar], null, 2)
 write(releaseFile, `${JSON.stringify({ ref, sha, schemas, floe: { ref: floe.ref, sha: floe.sha } }, null, 2)}\n`);
 
 /** Sync one repository's published docs into src/content/docs/<base>/ and public/<base>-assets/. */
-function syncDocs({ repoUrl, base, ref, dir, sparse }) {
+function syncDocs({ repoUrl, base, ref, dir, sparse, changelog }) {
   const name = posix.basename(repoUrl);
   const source = dir || checkout(repoUrl, ref, sparse);
   const sha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: source, encoding: "utf8" }).trim();
@@ -70,6 +72,11 @@ function syncDocs({ repoUrl, base, ref, dir, sparse }) {
     (directory) => listMarkdown(join(source, directory)).map((file) => posix.join(directory.replace(/\/$/, ""), file)),
     base,
   );
+  if (changelog) {
+    published["CHANGELOG.md"] = changelog;
+    titles["CHANGELOG.md"] = "Changelog";
+    sidebar.at(-1).items.push({ slug: `${base}/${changelog}` });
+  }
 
   rmSync(contentDir, { recursive: true, force: true });
   rmSync(assetsDir, { recursive: true, force: true });
